@@ -99,10 +99,6 @@ use kebab case for folder names and snake case for file names. page service will
 **Prompt 14:**
 > crete a file for tesitng stratergy as well, we will also do heavey test driven developement , so all use cases are always covered, any time a test breaks or user reports abug a heavey analysis will be done to figure out why that bug happened and how we could imporve the testing so bug woul dhave not happened. We will also try to run test cases as an when possible , every 6 hours for sure ,so create a seperate file to maintain that as well
 
-
-
-
-
 ---
 
 ## Session 2: Project Setup & UI Implementation
@@ -172,7 +168,7 @@ Micro-interactions on all interactive elements
 ## UI Visual Mockup Request
 
 **Prompt 16:**
-> can you show an image how ui may look like ?
+> can you show an html how ui may look like ?
 
 
 ---
@@ -180,7 +176,7 @@ Micro-interactions on all interactive elements
 ## Authentication Method Change
 
 **Prompt 17:**
-> requirement change alert - user phone number and fixed otp - 2213 for login
+> requirement change - user phone number and fixed otp - 2213 for login
 
 ---
 
@@ -195,6 +191,25 @@ Micro-interactions on all interactive elements
 
 ## Session 3: UI Implementation & Testing
 
-**Prompt 24 (2026-03-04):**
+**Prompt 19 (2026-03-04):**
 > ui mick up looking good lets go to implement login page first and write test cases for it -- want to understand test cases in english whata ll you are planning to write as test cases
 
+**Prompt 22 (2026-03-04):**
+> create a branch ila/implementation
+
+**Prompt 23 (2026-03-04):**
+> create implement-phase-quidelines.md for login page and we will exectute tasks one by one
+
+**Prompt 24 (2026-03-04):**
+> RUn for manual testing
+
+
+
+
+
+
+
+
+## Query 108
+**Timestamp**: 2026-03-05
+**User Message**: push all changes

@@ -15,23 +15,77 @@ UrbanCompany's design philosophy emphasizes:
 
 ## Design System
 
-### Color Palette (Vibrant Pastels - Green, Pink, Blue, Yellow)
-- **Primary Green**: `#86efac` (Soft Mint Green) - Primary accent, interactive elements
-- **Primary Pink**: `#f472b6` (Soft Rose Pink) - Secondary accent, highlights
-- **Primary Blue**: `#60a5fa` (Soft Sky Blue) - Tertiary accent, information
-- **Primary Yellow**: `#fbbf24` (Soft Amber Yellow) - Accent, CTAs, highlights
-- **Background**: `#fafaf9` (Warm Off-white) - Clean, minimal
-- **Surface Light**: `#f0fdf4` (Ultra-light Green) - Subtle backgrounds
-- **Surface Dark**: `#fce7f3` (Ultra-light Pink) - Cards, sections
+### Color Palette (Final - User Provided)
+
+The Wall Decor Visualizer uses a carefully curated pastel color palette that balances aesthetics with accessibility and usability.
+
+**Primary Colors:**
+- **Primary Accent**: `#97B3AE` (Muted Teal) - Used for buttons, links, titles, focus states, and all primary interactive elements
+- **Secondary Accent**: `#F2C3B9` (Soft Rose) - Used for hover states, highlights, and secondary interactive elements
+
+**Background Colors:**
+- **Main Background**: `#ffffff` (White) - Primary background for all pages and components
+- **Light Background**: `#F0DDD6` (Warm Beige) - Light background variations and subtle sections
+- **Subtle Background**: `#D2E0D3` (Soft Sage) - Subtle background variations for depth
+
+**Text Colors:**
+- **Primary Text**: `#2d3748` (Soft Charcoal) - Main text content
+- **Secondary Text**: `#78716c` (Warm Gray) - Secondary text, descriptions, and metadata
+
+**Utility Colors:**
+- **Borders & Dividers**: `#D6CBBF` (Taupe) - Borders, dividers, and secondary elements
+- **Loading Indicator**: `#C1E1C1` (Soft Mint Green) - Loading states and progress indicators only
+
+**Color Usage Guidelines:**
+1. Use `#97B3AE` for all primary interactive elements (buttons, links, titles, focus states)
+2. Use `#F2C3B9` for hover states and highlights
+3. Use `#ffffff` as the main background
+4. Use `#D2E0D3` for subtle background variations
+5. Use `#D6CBBF` for borders and dividers
+6. Keep text colors unchanged (`#2d3748`, `#78716c`)
+7. No gradients - use solid colors only
+8. Maintain smooth animations and transitions with cubic-bezier easing
+
+---
+
+## Design System
+
+### Color Palette
+
+#### Final Color Palette - Pastel Harmony (Primary)
+The primary color palette uses user-provided pastel colors for a cohesive, warm aesthetic:
+
+- **Primary Accent**: `#97B3AE` (Muted Teal) - Buttons, links, interactive elements, focus states, titles
+- **Secondary Accent**: `#F2C3B9` (Soft Rose) - Hover states, highlights, loading indicators
+- **Main Background**: `#F0EEEA` (Off-white) - Primary page background
+- **Light Background**: `#F0DDD6` (Warm Beige) - Light backgrounds, subtle variations
+- **Subtle Background**: `#D2E0D3` (Soft Sage) - Subtle background variations, depth
+- **Borders & Dividers**: `#D6CBBF` (Taupe) - Borders, secondary elements
 - **Text Primary**: `#2d3748` (Soft Charcoal) - Main text
 - **Text Secondary**: `#78716c` (Warm Gray) - Secondary text
-- **Text Tertiary**: `#a8a29e` (Light Warm Gray) - Disabled, hints
-- **Border**: `#e7e5e4` (Warm Light Gray) - Dividers, borders
-- **Error**: `#f87171` (Soft Red) - Errors, warnings
-- **Success**: `#86efac` (Soft Mint Green) - Success states
-- **Info**: `#60a5fa` (Soft Sky Blue) - Information
 
-### Typography
+#### Simplified Color Palette (Alternative - Minimal Approach)
+For a more minimal implementation, use this simplified palette:
+
+- **Primary Accent**: `#d4a5a5` (Muted Dusty Rose) - Buttons, links, interactive elements, hover/focus states
+- **Background**: `#fafaf9` (Warm Off-white) - Main page background
+- **Surface**: `#f5ede7` (Ultra-light Warm) - Cards, form containers, sections
+- **Text Primary**: `#2d3748` (Soft Charcoal) - All primary text, headings
+- **Text Secondary**: `#78716c` (Warm Gray) - Secondary text, descriptions
+- **Border**: `#e7e5e4` (Warm Light Gray) - Dividers, input borders, card borders
+- **Loading**: `#C1E1C1` (Soft Mint Green) - Loading spinners and progress bars only
+
+#### Color Usage Guidelines
+
+**Implementation Rules:**
+1. Use primary accent color for all interactive elements
+2. Use secondary accent for hover and loading states
+3. Use main background color throughout
+4. Use subtle background colors for depth and variation
+5. Use taupe/warm gray for borders and dividers
+6. Keep text colors consistent
+7. No gradients - solid colors only
+8. Maintain smooth animations and transitions
 - **Font Family**: `-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen'`
 - **Heading 1 (H1)**: 2.5rem (40px), Bold (700), Line-height 1.2, Letter-spacing -0.02em
 - **Heading 2 (H2)**: 2rem (32px), Bold (700), Line-height 1.3, Letter-spacing -0.01em
@@ -620,3 +674,54 @@ The UI has been updated to match a premium, smooth aesthetic inspired by modern 
 3. `login_page.module.css` - Login page background with floating elements
 4. `upload_page.module.css` - Upload page background with floating elements
 5. `ui_design.md` - Updated design specifications with new color palette and animations
+
+
+### Animations
+Elastic button hover effects with scale and shadow
+Smooth fade-in animations on page load (0.6s - 0.8s)
+Staggered form field animations (0.1s - 0.4s delays)
+Floating background elements with 20-25s animations
+Gradient underlines on links with smooth width transitions
+Soft glow effects on input focus
+Cubic-bezier easing (0.34, 1.56, 0.64, 1) for smooth, elastic feel
+Micro-interactions on all interactive elements
+
+---
+
+## Color Palette Update - Vibrant Pastels (Session 2)
+
+**Updated to vibrant pastel range:**
+- Soft Mint Green (#86efac) - Primary accent
+- Soft Rose Pink (#f472b6) - Secondary accent  
+- Soft Sky Blue (#60a5fa) - Tertiary accent
+- Soft Amber Yellow (#fbbf24) - Highlights & CTAs
+- Ultra-light Green (#f0fdf4) - Subtle backgrounds
+- Ultra-light Pink (#fce7f3) - Card backgrounds
+
+**Gradient Updates:**
+- Title gradients: Green → Pink → Blue (vibrant pastel flow)
+- Button gradients: Green → Pink → Blue (smooth transitions)
+- Link underlines: Green → Pink (smooth hover effect)
+- Background gradients: Green → Off-white → Pink (ambient feel)
+
+**All CSS files updated with new color palette:**
+- login_form.module.css
+- image_upload.module.css
+- login_page.module.css
+- upload_page.module.css
+- ui_mockup.html
+
+
+---
+
+## Loading States Colors
+
+**Loading State Palette:**
+- **Loading Primary**: `#C1E1C1` (Soft Mint Green) - Primary loading indicator
+- **Loading Secondary**: `#FFE5B4` (Soft Peach) - Secondary loading indicator
+
+**Usage:**
+- Progress bars: Gradient from #C1E1C1 to #FFE5B4
+- Loading spinners: Alternate between #C1E1C1 and #FFE5B4
+- Skeleton screens: #C1E1C1 shimmer effect
+- Loading text: #FFE5B4 pulse effect
