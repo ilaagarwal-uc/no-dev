@@ -165,15 +165,23 @@ This document details all validation rules, error handling, and security measure
 - Key format: `brute_force:otp:{phone_number}`
 
 **Rule 4.2: Progressive Lockout**
-- After 3 failed attempts: Show warning "2 attempts remaining"
-- After 4 failed attempts: Show warning "1 attempt remaining"
-- After 5 failed attempts: Invalidate OTP and require new request
-- Return HTTP 429 with error message "Too many failed attempts. Please request a new OTP"
+- After 1 failed attempt: Show error "Invalid OTP. Please try again"
+- After 2 failed attempts: Show error "Invalid OTP. Please try again" with warning "1 attempt remaining"
+- After 3 failed attempts: Lock OTP verification for 1 minute
+  - Return HTTP 429 with error message "Too many failed attempts. Please try again after 1 minute"
+  - Display countdown timer showing remaining wait time
+  - Disable OTP input field and "Verify OTP" button
+  - Show "Back" button to request new OTP
+- After 5 failed attempts (across multiple 1-minute windows): Invalidate OTP completely
+  - Return HTTP 429 with error message "Too many failed attempts. Please request a new OTP"
 
 **Rule 4.3: Lockout Duration**
-- After OTP is invalidated due to brute force: Lock for 15 minutes
-- User must wait 15 minutes before requesting new OTP
-- Return HTTP 429 with error message "Please wait 15 minutes before requesting a new OTP"
+- After 3 failed attempts: Lock OTP verification for 1 minute
+- User cannot submit OTP during lockout period
+- Display countdown timer: "Please try again in 59 seconds"
+- After 1 minute: Automatically unlock and allow retry
+- If user makes 5 total failed attempts (across multiple lockout windows): Permanently invalidate OTP
+- User must request new OTP
 
 **Rule 4.4: Brute Force Detection Logging**
 - Log all brute force attempts with:

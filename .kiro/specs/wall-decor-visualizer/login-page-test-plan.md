@@ -567,3 +567,81 @@ This document outlines all test cases for the login page feature in plain Englis
 12. **Phase 12 - Edge Cases** (Tests 12.1-12.5)
     - Verify boundary conditions
 
+
+
+---
+
+## Additional Test Cases - OTP Lockout (3 Failed Attempts = 1 Minute Lockout)
+
+**Test 4.10: OTP Lockout - 1st Failed Attempt**
+- When the user enters an incorrect OTP (e.g., "1234")
+- And clicks the "Verify OTP" button
+- Then an error message should appear saying "Invalid OTP. 2 attempts remaining"
+- And the OTP input field should be cleared
+- And the user should be able to retry
+
+**Test 4.11: OTP Lockout - 2nd Failed Attempt**
+- When the user has already failed once
+- And enters another incorrect OTP
+- And clicks the "Verify OTP" button
+- Then an error message should appear saying "Invalid OTP. 1 attempt remaining"
+- And the OTP input field should be cleared
+- And the user should be able to retry
+
+**Test 4.12: OTP Lockout - 3rd Failed Attempt (Lock for 1 Minute)**
+- When the user has already failed twice
+- And enters a third incorrect OTP
+- And clicks the "Verify OTP" button
+- Then an error message should appear saying "Too many failed attempts. Please try again in 60 seconds"
+- And the OTP input field should be disabled
+- And the "Verify OTP" button should be disabled
+- And a countdown timer should display showing remaining wait time (e.g., "59 seconds")
+- And the "Back" button should be available to request a new OTP
+
+**Test 4.13: OTP Lockout - Countdown Timer**
+- When the OTP is locked after 3 failed attempts
+- Then a countdown timer should display the remaining wait time
+- And the timer should decrement every second
+- And the timer should show "Please try again in 59 seconds", "Please try again in 58 seconds", etc.
+- And when the timer reaches 0, the OTP input field should be automatically unlocked
+- And the user should be able to retry
+
+**Test 4.14: OTP Lockout - Automatic Unlock After 1 Minute**
+- When the OTP is locked after 3 failed attempts
+- And the user waits for 60 seconds
+- Then the OTP input field should be automatically unlocked
+- And the "Verify OTP" button should be automatically enabled
+- And the countdown timer should disappear
+- And the user should be able to retry with a new OTP attempt
+
+**Test 4.15: OTP Lockout - 4th Failed Attempt (After Unlock)**
+- When the OTP is locked and then unlocked after 1 minute
+- And the user enters another incorrect OTP
+- And clicks the "Verify OTP" button
+- Then an error message should appear saying "Invalid OTP. Please try again"
+- And the failed attempts counter should continue (now 4 total)
+- And the user should be able to retry
+
+**Test 4.16: OTP Lockout - 5th Failed Attempt (Permanent Invalidation)**
+- When the user has failed 4 times
+- And enters a fifth incorrect OTP
+- And clicks the "Verify OTP" button
+- Then an error message should appear saying "Too many failed attempts. Please request a new OTP"
+- And the OTP should be permanently invalidated
+- And the user should NOT be able to retry with the same OTP
+- And the user should be forced to go back and request a new OTP
+
+**Test 4.17: OTP Lockout - Back Button During Lockout**
+- When the OTP is locked after 3 failed attempts
+- And the user clicks the "Back" button
+- Then the form should transition back to the phone number entry step
+- And the user should be able to request a new OTP
+- And the lockout should be cleared
+
+**Test 4.18: OTP Lockout - Lockout Persists Across Page Refresh**
+- When the OTP is locked after 3 failed attempts
+- And the user refreshes the page
+- Then the lockout should persist (stored on backend)
+- And the OTP input field should still be disabled
+- And the countdown timer should continue from where it left off
+
