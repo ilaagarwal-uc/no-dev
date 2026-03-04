@@ -42,22 +42,28 @@ The Wall Decor Visualizer is a feature that enables users to transform 2D images
 
 ## Requirements
 
-### Requirement 0: User Authentication and Login
+### Requirement 0: User Authentication and Login (Phone Number + OTP)
 
-**User Story:** As a user, I want to log in to the web application with my credentials, so that I can access the wall visualization tool securely.
+**User Story:** As a user, I want to log in to the web application using my phone number and OTP, so that I can access the wall visualization tool securely.
 
 #### Acceptance Criteria
 
 1. WHEN a user navigates to the web URL, THE Authentication_System SHALL check if a valid session token exists in local storage or cookies
 2. IF a valid session token exists, THE Authentication_System SHALL automatically log the user in and redirect to the main application
-3. IF no valid session token exists, THE Authentication_System SHALL display a login page with email and password fields
-4. WHEN the user enters their credentials and clicks "Login", THE Authentication_System SHALL send the credentials to the Backend_Server via the /api/auth/login API_Endpoint
-5. WHEN the Backend_Server receives login credentials, THE User_Authentication_Handler SHALL validate the credentials against the user database
-6. IF the credentials are invalid, THEN THE Authentication_System SHALL display an error message and allow the user to retry
-7. WHEN the credentials are valid, THE User_Authentication_Handler SHALL generate a Session_Token with an expiration time
-8. WHEN a Session_Token is generated, THE Backend_Server SHALL return the token to the client
-9. WHEN the Session_Token is received, THE Authentication_System SHALL store it in local storage and/or secure HTTP-only cookies
-10. WHEN the Session_Token is stored, THE Authentication_System SHALL redirect the user to the main application dashboard
+3. IF no valid session token exists, THE Authentication_System SHALL display a login page with a phone number field
+4. WHEN the user enters their phone number and clicks "Send OTP", THE Authentication_System SHALL send the phone number to the Backend_Server via the /api/auth/send-otp API_Endpoint
+5. WHEN the Backend_Server receives a phone number, THE User_Authentication_Handler SHALL validate the phone number format
+6. IF the phone number format is invalid, THEN THE Authentication_System SHALL display an error message and allow the user to retry
+7. WHEN the phone number is valid, THE User_Authentication_Handler SHALL generate a fixed OTP (2213) and store it temporarily with a 10-minute expiration
+8. WHEN the OTP is generated, THE Backend_Server SHALL return a success response to the client
+9. WHEN the success response is received, THE Authentication_System SHALL display an OTP input field for the user to enter the 4-digit code
+10. WHEN the user enters the OTP and clicks "Verify", THE Authentication_System SHALL send the OTP to the Backend_Server via the /api/auth/verify-otp API_Endpoint
+11. WHEN the Backend_Server receives the OTP, THE User_Authentication_Handler SHALL validate the OTP against the stored value
+12. IF the OTP is invalid or expired, THEN THE Authentication_System SHALL display an error message and allow the user to retry or request a new OTP
+13. WHEN the OTP is valid, THE User_Authentication_Handler SHALL generate a Session_Token with an expiration time
+14. WHEN a Session_Token is generated, THE Backend_Server SHALL return the token to the client
+15. WHEN the Session_Token is received, THE Authentication_System SHALL store it in local storage and/or secure HTTP-only cookies
+16. WHEN the Session_Token is stored, THE Authentication_System SHALL redirect the user to the main application dashboard
 
 ---
 
