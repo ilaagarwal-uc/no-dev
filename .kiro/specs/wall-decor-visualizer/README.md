@@ -8,13 +8,12 @@ Wall Decor Visualizer is a web application that enables users to transform 2D im
 
 ## 📁 Specification Files Structure
 
-### Root Level (16 Files)
+### Root Level (15 Files)
 
 ```
 .kiro/specs/wall-decor-visualizer/
 │
-├── 📄 SPEC_STRUCTURE.md              ← Complete file organization guide
-├── 📄 README.md                      ← This file
+├── 📄 README.md                      ← This file (complete file organization guide)
 │
 ├── 🏗️  ARCHITECTURE & DESIGN
 │   ├── architecture.md               ← DDD architecture pattern
@@ -23,9 +22,7 @@ Wall Decor Visualizer is a web application that enables users to transform 2D im
 │
 ├── 🎨 UI & DESIGN
 │   ├── ui_design.md                  ← UI design specifications
-│   ├── ui_mockup_final.html          ← Interactive HTML mockup
-│   ├── color_palette_final.md        ← Final 6-color palette
-│   └── color_palette_simplified.md   ← Simplified reference
+│   └── ui_mockup_final.html          ← Interactive HTML mockup
 │
 ├── ⚙️  SETUP & CONFIGURATION
 │   ├── setup.md                      ← Project setup guide
@@ -33,15 +30,14 @@ Wall Decor Visualizer is a web application that enables users to transform 2D im
 │
 ├── 📋 IMPLEMENTATION
 │   ├── tasks.md                      ← Task list (12 phases, 100+ tasks)
-│   ├── validation-specification.md   ← Validation rules
-│   └── login-page-test-plan.md       ← Test plan (markdown version)
+│   └── validation-specification.md   ← Validation rules
 │
 ├── 🧪 TESTING & QUALITY
 │   ├── testing-strategy.md           ← TDD approach and testing pyramid
 │   └── test-execution-schedule.md    ← Automated test schedule
 │
 └── 📝 DOCUMENTATION
-    └── user-prompts.md               ← All user prompts logged (27+ prompts)
+    └── user-prompts.md               ← All user prompts logged (30+ prompts)
 ```
 
 ### Validation-Testing Subfolder (2 Files)
@@ -54,13 +50,105 @@ validation-testing/
 
 ---
 
+## 📋 Complete File Organization
+
+### Core Specification Files
+
+#### 1. **architecture.md**
+- DDD (Domain-Driven Design) architecture pattern
+- Folder structure with kebab-case and snake_case conventions
+- Data-service and page-service separation
+- Domain and application layer organization
+- No generic helper/manager files rule
+
+#### 2. **design.md**
+- Technical design document
+- System components and interactions
+- Data models and schemas
+- API endpoint specifications
+- Integration points
+
+#### 3. **requirements.md**
+- Feature requirements with user stories
+- Acceptance criteria for each requirement
+- Requirement 0: Phone Number + OTP Authentication
+- Requirement 0.5: Session Persistence
+- Requirement 1-23: Full feature set
+
+#### 4. **setup.md**
+- Project setup instructions
+- Environment configuration
+- Dependency installation
+- Database setup
+- API configuration
+
+#### 5. **setup_keys.md**
+- MongoDB connection string
+- GCP Project ID and credentials
+- Gemini API key
+- Cloud Storage bucket configuration
+- Environment variable setup
+
+#### 6. **tasks.md**
+- Implementation task list
+- 12 phases with 100+ tasks
+- Task dependencies and prerequisites
+- Estimated effort and timeline
+
+#### 7. **testing-strategy.md**
+- Test-Driven Development (TDD) approach
+- Testing pyramid: Unit (70%), Integration (25%), E2E (5%)
+- Root cause analysis process
+- Test maintenance and coverage targets
+- CI/CD pipeline configuration
+
+#### 8. **test-execution-schedule.md**
+- Automated test runs every 6 hours
+- Pre-commit hook tests
+- Pre-deployment tests
+- GitHub Actions workflow
+
+#### 9. **user-prompts.md**
+- All user prompts logged with timestamps
+- Sequential numbering (Prompt 1-30+)
+- Key decisions and changes documented
+- Session history and context
+
+#### 10. **ui_design.md**
+- UI design specifications
+- Component specifications
+- Typography and spacing
+- Animation and transition rules
+- Responsive design breakpoints
+- Color palette (final and simplified)
+
+#### 11. **ui_mockup_final.html**
+- Interactive HTML mockup
+- Login page preview
+- Upload page preview
+- Color palette demonstration
+- Premium animation showcase
+
+#### 12. **validation-specification.md**
+- Phone number validation rules
+- OTP validation rules
+- Rate limiting specifications
+- Brute force protection
+- Network error handling
+- Session token validation
+- CSRF protection
+- Input sanitization
+- Error response format
+
+---
+
 ## 📊 File Statistics
 
 | Category | Count | Details |
 |----------|-------|---------|
-| **Specification Files** | 16 | Architecture, design, requirements, setup |
+| **Specification Files** | 15 | Architecture, design, requirements, setup |
 | **Validation-Testing Files** | 2 | Test plan and validation rules (TypeScript) |
-| **Total Files** | 18 | Complete specification package |
+| **Total Files** | 17 | Complete specification package |
 | **Test Cases** | 80+ | Organized by category |
 | **Validation Rules** | 100+ | Frontend and backend |
 | **Error Codes** | 14 | With HTTP status and actions |
@@ -239,7 +327,6 @@ validation-testing/
 |------|---------|----------|
 | `tasks.md` | Implementation tasks | Project Managers |
 | `user-prompts.md` | Decision history | Everyone |
-| `SPEC_STRUCTURE.md` | File organization | Everyone |
 
 ---
 
@@ -310,7 +397,7 @@ cat tasks.md
 ## 📞 Support
 
 For questions about the specification:
-1. Check `SPEC_STRUCTURE.md` for file organization
+1. Check `README.md` for file organization and overview
 2. Review `user-prompts.md` for decision history
 3. Consult relevant specification file for details
 4. Contact project team for clarification
@@ -324,7 +411,7 @@ This specification is part of the Wall Decor Visualizer project.
 ---
 
 **Last Updated**: March 4, 2026  
-**Total Specification Files**: 18  
+**Total Specification Files**: 17  
 **Test Cases**: 80+  
 **Validation Rules**: 100+  
 **Status**: ✅ Complete and Ready for Implementation
