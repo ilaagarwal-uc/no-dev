@@ -118,14 +118,16 @@ The Wall Decor Visualizer is a feature that enables users to transform 2D images
 
 1. WHEN the user selects "Capture from Camera", THE Camera_Capture_Handler SHALL request camera permissions from the device
 2. IF camera permissions are denied, THEN THE Camera_Capture_Handler SHALL display an error message explaining why camera access is needed
-3. WHEN permissions are granted, THE Camera_Capture_Handler SHALL open a full-screen camera view with a live feed
-4. WHEN the camera view is open, THE Camera_Capture_Handler SHALL display a prominent capture button in the center or bottom of the screen
-5. WHEN the camera view is open, THE Camera_Capture_Handler SHALL display a cancel button to close the camera without capturing
-6. WHEN the user clicks the capture button, THE Camera_Capture_Handler SHALL capture a high-resolution image from the camera feed
-7. WHEN an image is captured, THE Camera_Capture_Handler SHALL display a preview of the captured image with options to "Confirm" or "Retake"
-8. WHEN the user clicks "Confirm", THE Camera_Capture_Handler SHALL proceed with uploading the image to the backend
-9. WHEN the user clicks "Retake", THE Camera_Capture_Handler SHALL return to the camera view for another capture attempt
-10. WHEN the user clicks "Cancel" at any point, THE Camera_Capture_Handler SHALL close the camera view and return to the upload options
+3. IF the device does not have a camera available, THEN THE Camera_Capture_Handler SHALL display an error message "Camera not available" and prevent camera access
+4. IF the camera hardware is in use by another application, THEN THE Camera_Capture_Handler SHALL display an error message "Camera is currently in use" and provide a retry option
+5. WHEN permissions are granted, THE Camera_Capture_Handler SHALL open a full-screen camera view with a live feed
+6. WHEN the camera view is open, THE Camera_Capture_Handler SHALL display a prominent capture button in the center or bottom of the screen
+7. WHEN the camera view is open, THE Camera_Capture_Handler SHALL display a cancel button to close the camera without capturing
+8. WHEN the user clicks the capture button, THE Camera_Capture_Handler SHALL capture a high-resolution image from the camera feed
+9. WHEN an image is captured, THE Camera_Capture_Handler SHALL display a preview of the captured image with options to "Confirm" or "Retake"
+10. WHEN the user clicks "Confirm", THE Camera_Capture_Handler SHALL proceed with uploading the image to the backend
+11. WHEN the user clicks "Retake", THE Camera_Capture_Handler SHALL return to the camera view for another capture attempt
+12. WHEN the user clicks "Cancel" at any point, THE Camera_Capture_Handler SHALL close the camera view and return to the upload options
 
 ---
 

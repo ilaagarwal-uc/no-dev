@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wall Decor Visualizer - Final UI Mockup</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', sans-serif;
+            background: #f5f5f5;
+        }
+
+        /* ===== LOGIN PAGE ===== */
+        .login-page {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: #ffffff;
+            padding: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-page::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(151, 179, 174, 0.04) 0%, transparent 70%);
+            animation: float 20s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        .login-page::after {
+            content: '';
+            position: absolute;
+            bottom: -50%;
+            left: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(242, 195, 185, 0.04) 0%, transparent 70%);
+            animation: float 25s ease-in-out infinite reverse;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(30px); }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            padding: 2.5rem;
+            animation: fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid #e7e5e4;
+            position: relative;
+            z-index: 1;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            animation: fadeInUp 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+        }
+
+        .login-title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: #97B3AE;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .login-subtitle {
+            font-size: 0.875rem;
+            color: #78716c;
+            font-weight: 500;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1.25rem;
+            animation: fadeInUp 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .form-group:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .form-group:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .form-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #2d3748;
+            letter-spacing: 0.3px;
+        }
+
+        .form-input {
+            height: 2.75rem;
+            padding: 0.75rem 1rem;
+            border: 1.5px solid #D6CBBF;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #ffffff;
+            color: #2d3748;
+        }
+
+        .form-input::placeholder {
+            color: #a8a29e;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #97B3AE;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(151, 179, 174, 0.1), 0 0 20px rgba(151, 179, 174, 0.15);
+        }
+
+        .submit-btn {
+            height: 2.75rem;
+            width: 100%;
+            padding: 0.75rem 1.5rem;
+            background: #97B3AE;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            margin-top: 0.75rem;
+            letter-spacing: 0.3px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(151, 179, 174, 0.25);
+        }
+
+        .submit-btn:active {
+            transform: translateY(-1px) scale(0.98);
+        }
+
+        .login-footer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 2rem;
+            font-size: 0.875rem;
+            animation: fadeInUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both;
+        }
+
+        .login-link {
+            color: #97B3AE;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            font-weight: 500;
+        }
+
+        .login-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #97B3AE;
+            transition: width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .login-link:hover {
+            opacity: 0.8;
+        }
+
+        .login-link:hover::after {
+            width: 100%;
+        }
+
+        /* ===== UPLOAD PAGE ===== */
+        .upload-page {
+            min-height: 100vh;
+            background: #ffffff;
+            padding: 2rem 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-page::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(151, 179, 174, 0.03) 0%, transparent 70%);
+            animation: float 25s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        .upload-container {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .upload-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .upload-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #97B3AE;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .upload-subtitle {
+            font-size: 1rem;
+            color: #78716c;
+            font-weight: 500;
+        }
+
+        .upload-content {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e7e5e4;
+            animation: fadeInUp 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+        }
+
+        .drop-zone {
+            border: 2px dashed #97B3AE;
+            border-radius: 16px;
+            padding: 3rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            background-color: #ffffff;
+            animation: fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .drop-zone:hover {
+            background-color: #ffffff;
+            border-color: #97B3AE;
+            box-shadow: 0 10px 30px rgba(151, 179, 174, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .drop-zone-icon {
+            width: 3rem;
+            height: 3rem;
+            color: #97B3AE;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            font-size: 3rem;
+        }
+
+        .drop-zone:hover .drop-zone-icon {
+            color: #97B3AE;
+            transform: scale(1.1);
+        }
+
+        .drop-zone-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin: 0;
+            letter-spacing: -0.01em;
+        }
+
+        .drop-zone-subtitle {
+            font-size: 0.875rem;
+            color: #78716c;
+            margin: 0.5rem 0 0 0;
+            font-weight: 500;
+        }
+
+        .drop-zone-formats {
+            font-size: 0.75rem;
+            color: #a8a29e;
+            margin: 0.5rem 0 0 0;
+            font-weight: 500;
+        }
+
+        /* ===== COLOR PALETTE DEMO ===== */
+        .demo-section {
+            padding: 2rem;
+            margin: 2rem 0;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e7e5e4;
+        }
+
+        .demo-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .color-swatch {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .color-box {
+            width: 100%;
+            height: 120px;
+            border-radius: 8px;
+            border: 1px solid #e7e5e4;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .color-name {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 0.875rem;
+            text-align: center;
+        }
+
+        .color-code {
+            font-size: 0.75rem;
+            color: #78716c;
+            font-family: monospace;
+            text-align: center;
+        }
+
+        .feature-list {
+            background: #F0DDD6;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .feature-list h4 {
+            color: #2d3748;
+            margin-bottom: 0.75rem;
+        }
+
+        .feature-list ul {
+            margin-left: 1.5rem;
+            line-height: 1.8;
+            color: #2d3748;
+        }
+
+        .feature-list li {
+            font-size: 0.875rem;
+        }
+
+        @media (max-width: 768px) {
+            .demo-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .login-container {
+                padding: 1.5rem;
+            }
+
+            .upload-content {
+                padding: 1.5rem;
+            }
+
+            .drop-zone {
+                padding: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- UPLOAD PAGE DEMO -->
+    <div class="demo-section">
+        <div class="demo-title">Upload Page Preview</div>
+        <div class="upload-page">
+            <div class="upload-container">
+                <div class="upload-header">
+                    <h1 class="upload-title">Upload Your Wall Image</h1>
+                    <p class="upload-subtitle">Drag and drop or click to select</p>
+                </div>
+
+                <div class="upload-content">
+                    <div class="drop-zone">
+                        <div class="drop-zone-icon">📤</div>
+                        <h2 class="drop-zone-title">Drag and drop your image here</h2>
+                        <p class="drop-zone-subtitle">or click to select from your computer</p>
+                        <p class="drop-zone-formats">Supported formats: JPG, PNG, WebP • Max size: 10MB</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COLOR PALETTE DEMO -->
+    <div class="demo-section">
+        <div class="demo-title">Final Color Palette</div>
+        <div class="demo-grid">
+            <div class="color-swatch">
+                <div class="color-box" style="background: #97B3AE;"></div>
+                <div class="color-name">Muted Teal</div>
+                <div class="color-code">#97B3AE</div>
+            </div>
+            <div class="color-swatch">
+                <div class="color-box" style="background: #D2E0D3;"></div>
+                <div class="color-name">Soft Sage</div>
+                <div class="color-code">#D2E0D3</div>
+            </div>
+            <div class="color-swatch">
+                <div class="color-box" style="background: #F0DDD6;"></div>
+                <div class="color-name">Warm Beige</div>
+                <div class="color-code">#F0DDD6</div>
+            </div>
+            <div class="color-swatch">
+                <div class="color-box" style="background: #F2C3B9;"></div>
+                <div class="color-name">Soft Rose</div>
+                <div class="color-code">#F2C3B9</div>
+            </div>
+            <div class="color-swatch">
+                <div class="color-box" style="background: #D6CBBF;"></div>
+                <div class="color-name">Taupe</div>
+                <div class="color-code">#D6CBBF</div>
+            </div>
+            <div class="color-swatch">
+                <div class="color-box" style="background: #F0EEEA;"></div>
+                <div class="color-name">Off-white</div>
+                <div class="color-code">#F0EEEA</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FEATURES -->
+    <div class="demo-section">
+        <div class="demo-title">UI Features</div>
+        <div class="feature-list">
+            <h4>✨ Premium Design Elements</h4>
+            <ul>
+                <li>Smooth elastic animations (cubic-bezier easing)</li>
+                <li>Floating background elements with ambient movement</li>
+                <li>Staggered form field animations</li>
+                <li>Soft glow effects on input focus</li>
+                <li>Elastic button hover effects with scale and shadow</li>
+                <li>Gradient underlines on links with smooth transitions</li>
+                <li>Responsive design for all screen sizes</li>
+                <li>Minimal color palette - one primary accent (#97B3AE)</li>
+                <li>Warm, inviting pastel color scheme</li>
+                <li>Clean, professional aesthetic</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
