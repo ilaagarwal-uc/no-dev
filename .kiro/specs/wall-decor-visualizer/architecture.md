@@ -1,1813 +1,762 @@
-# Wall Decor Visualizer - Code Architecture
+# Wall Decor Visualizer - Architecture Document
 
-This document defines the code structure, organization patterns, and conventions for the Wall Decor Visualizer project using Domain-Driven Design (DDD).
+## Overview
+
+The Wall Decor Visualizer is a web-based application built using Domain-Driven Design (DDD) principles with a clear separation between data operations and UI presentation. The architecture follows a two-service pattern: data-service for business logic and API operations, and page-service for UI components and page logic.
 
 ---
 
-## Frontend Architecture (DDD Pattern)
+## Technology Stack
 
-### Folder Structure
+### Backend
+- **Runtime**: Node.js 18+
+- **Framework**: Express.js
+- **Language**: TypeScript
+- **Database**: MongoDB
+- **Cloud Storage**: Google Cloud Platform (GCP) Cloud Storage
+- **AI Integration**: Google Gemini API
+- **3D Processing**: Headless Blender
+- **Authentication**: JWT (JSON Web Tokens)
+- **Testing**: Vitest, Supertest
+
+### Frontend
+- **Framework**: React 18+
+- **Build Tool**: Vite
+- **Language**: TypeScript
+- **Styling**: CSS Modules
+- **State Management**: React Context API
+- **Routing**: React Router
+- **HTTP Client**: Axios
+- **Testing**: Vitest, React Testing Library, Playwright
+
+### Infrastructure
+- **Version Control**: Git
+- **CI/CD**: GitHub Actions
+- **Deployment**: TBD (post-demo)
+- **Monitoring**: Console logging (enhanced monitoring post-demo)
+
+---
+
+## Architecture Principles
+
+### 1. Domain-Driven Design (DDD)
+- Clear separation between domain logic and application logic
+- Domain layer contains pure business logic
+- Application layer handles API contracts and external interactions
+- No cross-domain dependencies within the same service
+
+### 2. Service Separation
+- **data-service**: Handles all data operations, business logic, and external API calls
+- **page-service**: Handles UI components, page logic, and user interactions
+- Services communicate through well-defined API contracts
+- No direct imports between services (page-service calls data-service APIs)
+
+### 3. Type Safety
+- TypeScript throughout the stack
+- Strict type checking enabled
+- No `any` types in production code
+- Separate type definitions for domain and application layers
+
+### 4. Test-Driven Development
+- Tests written before implementation
+- 80%+ code coverage target
+- Automated testing every 6 hours
+- Root cause analysis for all failures
+
+---
+
+## System Architecture
+
+### High-Level Architecture
 
 ```
-wall-decor-visualizer-frontend/
-├── .gitlab/
-│   └── merge-request-templates/
-│       └── mr_description.md
-│
-├── configs/
-│   ├── development/
-│   │   ├── api_config.json
-│   │   └── app_config.json
-│   ├── production/
-│   │   ├── api_config.json
-│   │   └── app_config.json
-│   └── global_config.json
-│
-├── schema/
-│   ├── user_schema.json
-│   ├── image_schema.json
-│   └── visualization_schema.json
-│
-├── scripts/
-│   ├── setup.ts
-│   └── build.ts
-│
+┌─────────────────────────────────────────────────────────────────┐
+│                        Frontend (React + Vite)                   │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────┐  │
+│  │  Login Page      │  │  Image Upload    │  │  3D Viewer   │  │
+│  │  (page-service)  │  │  (page-service)  │  │  (page-service)│
+│  └──────────────────┘  └──────────────────┘  └──────────────┘  │
+│           │                     │                     │          │
+│           └─────────────────────┴─────────────────────┘          │
+│                    HTTP/REST API Calls                           │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                    ┌─────────┴─────────┐
+                    │                   │
+        ┌───────────▼──────────┐  ┌────▼──────────────┐
+        │  API Gateway         │  │  WebSocket        │
+        │  (REST Endpoints)    │  │  (Future)         │
+        └───────────┬──────────┘  └───────────────────┘
+                    │
+        ┌───────────▼──────────────────────────────┐
+        │      Backend (Node.js + Express)         │
+        │  ┌──────────────────────────────────┐   │
+        │  │  data-service                    │   │
+        │  │  - Authentication (auth domain)  │   │
+        │  │  - Image Management (image)      │   │
+        │  │  - Gemini Integration (gemini)   │   │
+        │  │  - Blender Execution (blender)   │   │
+        │  └──────────────────────────────────┘   │
+        └──────────────────────────────────────────┘
+                    │
+        ┌───────────┼───────────┐
+        │           │           │
+    ┌───▼──┐  ┌────▼────┐  ┌──▼────┐
+    │ GCP  │  │MongoDB  │  │Headless│
+    │Cloud │  │Database │  │Blender │
+    │Store │  │         │  │        │
+    └──────┘  └─────────┘  └────────┘
+```
+
+---
+
+## Directory Structure
+
+### Backend Structure
+
+```
+backend/
 ├── src/
 │   ├── data-service/
-│   │   ├── application/
+│   │   ├── domain/
 │   │   │   ├── auth/
-│   │   │   │   ├── login.api.ts
-│   │   │   │   ├── logout.api.ts
-│   │   │   │   ├── refresh.api.ts
-│   │   │   │   └── index.ts
+│   │   │   │   ├── auth_schema.ts       # Auth types (IUser, IAuthToken, IOTP)
+│   │   │   │   ├── index.ts             # Auth domain logic + validation
+│   │   │   │   └── interface.ts         # Optional additional interfaces
 │   │   │   ├── image/
-│   │   │   │   ├── upload_image.api.ts
-│   │   │   │   ├── get_image.api.ts
-│   │   │   │   ├── delete_image.api.ts
-│   │   │   │   └── index.ts
-│   │   │   ├── gemini/
-│   │   │   │   ├── generate_script.api.ts
-│   │   │   │   └── index.ts
-│   │   │   ├── blender/
-│   │   │   │   ├── execute_blender.api.ts
-│   │   │   │   ├── get_job_status.api.ts
-│   │   │   │   └── index.ts
-│   │   │   ├── errors.ts
-│   │   │   └── index.ts
-│   │   └── domain/
+│   │   │   │   ├── image_schema.ts      # Image types
+│   │   │   │   └── index.ts             # Image domain logic
+│   │   │   └── index.ts                 # Export all domains
+│   │   └── application/
 │   │       ├── auth/
-│   │       │   ├── auth_schema.ts
-│   │       │   ├── interface.ts (optional)
-│   │       │   └── index.ts
+│   │       │   ├── generate_otp.api.ts  # Generate OTP API
+│   │       │   ├── verify_otp.api.ts    # Verify OTP API
+│   │       │   └── index.ts             # Export auth APIs
 │   │       ├── image/
-│   │       │   ├── image_schema.ts
-│   │       │   ├── interface.ts (optional)
-│   │       │   └── index.ts
-│   │       ├── gemini/
-│   │       │   ├── gemini_schema.ts
-│   │       │   ├── interface.ts (optional)
-│   │       │   └── index.ts
-│   │       ├── blender/
-│   │       │   ├── blender_schema.ts
-│   │       │   ├── interface.ts (optional)
-│   │       │   └── index.ts
-│   │       └── index.ts
-│   │
+│   │       │   ├── upload_image.api.ts  # Upload image API
+│   │       │   └── index.ts             # Export image APIs
+│   │       ├── errors.ts                # ALL data-service errors
+│   │       └── index.ts                 # Export all APIs
 │   ├── page-service/
-│   │   ├── application/
-│   │   │   ├── login/
-│   │   │   │   ├── login_page.api.ts
-│   │   │   │   └── index.ts
-│   │   │   ├── upload/
-│   │   │   │   ├── upload_page.api.ts
-│   │   │   │   └── index.ts
-│   │   │   ├── viewer/
-│   │   │   │   ├── viewer_page.api.ts
-│   │   │   │   └── index.ts
-│   │   │   ├── dashboard/
-│   │   │   │   ├── dashboard_page.api.ts
-│   │   │   │   └── index.ts
-│   │   │   ├── errors.ts
-│   │   │   └── index.ts
-│   │   └── domain/
-│   │       ├── session/
-│   │       │   └── index.ts
-│   │       ├── login-page/
-│   │       │   ├── LoginPage.tsx
-│   │       │   ├── LoginForm.tsx
-│   │       │   ├── login_form.module.css
-│   │       │   ├── login_form_logic.ts (optional)
-│   │       │   ├── index.ts
-│   │       │   └── interface.ts (optional)
-│   │       ├── upload-page/
-│   │       │   ├── UploadPage.tsx
-│   │       │   ├── ImageUpload.tsx
-│   │       │   ├── CameraCapture.tsx
-│   │       │   ├── FileUpload.tsx
-│   │       │   ├── UploadProgress.tsx
-│   │       │   ├── image_upload.module.css
-│   │       │   ├── image_upload_logic.ts (optional)
-│   │       │   ├── index.ts
-│   │       │   └── interface.ts (optional)
-│   │       ├── viewer-page/
-│   │       │   ├── ViewerPage.tsx
-│   │       │   ├── ModelViewer.tsx
-│   │       │   ├── ViewportControls.tsx
-│   │       │   ├── ModelCatalog.tsx
-│   │       │   ├── model_viewer.module.css
-│   │       │   ├── model_viewer_logic.ts (optional)
-│   │       │   ├── index.ts
-│   │       │   └── interface.ts (optional)
-│   │       ├── dashboard-page/
-│   │       │   ├── DashboardPage.tsx
-│   │       │   ├── index.ts
-│   │       │   └── interface.ts (optional)
-│   │       ├── not-found-page/
-│   │       │   ├── NotFoundPage.tsx
-│   │       │   ├── index.ts
-│   │       │   └── interface.ts (optional)
-│   │       └── index.ts
-│   │
-│   ├── App.tsx
-│   ├── app.module.css
-│   ├── main.tsx
-│   └── vite_env.d.ts
-│
-├── formatters/
+│   │   ├── domain/
+│   │   │   ├── login-page/
+│   │   │   │   ├── LoginPage.tsx        # Main login page component
+│   │   │   │   ├── PhoneNumberForm.tsx  # Phone number input form
+│   │   │   │   ├── OTPForm.tsx          # OTP verification form
+│   │   │   │   ├── login_page.module.css
+│   │   │   │   ├── index.ts             # Page logic functions
+│   │   │   │   └── interface.ts         # Optional interfaces
+│   │   │   ├── upload-page/
+│   │   │   │   ├── UploadPage.tsx       # Main upload page
+│   │   │   │   ├── ImageUploader.tsx    # Image upload component
+│   │   │   │   ├── CameraCapture.tsx    # Camera capture component
+│   │   │   │   ├── upload_page.module.css
+│   │   │   │   └── index.ts             # Page logic functions
+│   │   │   └── index.ts                 # Export all page domains
+│   │   └── application/
+│   │       ├── login/
+│   │       │   ├── login_page.api.ts    # Login page API calls
+│   │       │   └── index.ts             # Export login APIs
+│   │       ├── upload/
+│   │       │   ├── upload_page.api.ts   # Upload page API calls
+│   │       │   └── index.ts             # Export upload APIs
+│   │       ├── errors.ts                # ALL page-service errors
+│   │       └── index.ts                 # Export all APIs
+│   ├── server.ts                        # Express server setup
+│   └── vite_env.d.ts                    # Vite type definitions (frontend only)
+├── formatters/                          # Feature-specific formatters
 │   ├── date_formatter.ts
-│   ├── image_formatter.ts
-│   └── dimension_formatter.ts
-│
-├── constants/
+│   └── phone_formatter.ts
+├── constants/                           # Feature-specific constants
 │   ├── api_constants.ts
-│   ├── validation_constants.ts
-│   └── ui_constants.ts
-│
-├── hooks/
-│   ├── use_auth.ts
-│   ├── use_image_upload.ts
-│   ├── use_camera.ts
-│   ├── use_api.ts
-│   └── use_local_storage.ts
-│
-├── store/
-│   ├── slices/
-│   │   ├── auth_slice.ts
-│   │   ├── upload_slice.ts
-│   │   ├── viewer_slice.ts
-│   │   └── ui_slice.ts
-│   ├── store.ts
-│   └── hooks.ts
-│
-├── types/
-│   ├── index.ts
-│   ├── api.ts
-│   └── models.ts
-│
-├── styles/
-│   ├── globals.css
-│   ├── variables.css
-│   └── reset.css
-│
-├── dist/
-├── test/
-│   ├── unit/
-│   │   ├── data-service/
-│   │   │   ├── domain/
-│   │   │   └── application/
-│   │   ├── page-service/
-│   │   │   ├── domain/
-│   │   │   └── application/
-│   │   └── fixtures/
-│   ├── integration/
-│   │   ├── auth.test.tsx
-│   │   ├── upload.test.tsx
-│   │   └── viewer.test.tsx
-│   └── fixtures/
-│       └── mock_data.ts
-│
-├── test-reports/
-├── public/
-│   ├── images/
-│   ├── icons/
-│   └── favicon.ico
-│
-├── .env.example
-├── .env.local
-├── .env.production
+│   └── validation_constants.ts
+├── logger.ts                            # Single logger file
+├── package.json
+├── tsconfig.json
+└── .env.local
+```
+
+### Frontend Structure
+
+```
+frontend/
+├── src/
+│   ├── data-service/
+│   │   ├── domain/
+│   │   │   ├── auth/
+│   │   │   │   ├── auth_schema.ts       # Auth types
+│   │   │   │   ├── index.ts             # Auth domain logic
+│   │   │   │   └── interface.ts         # Optional interfaces
+│   │   │   └── index.ts                 # Export all domains
+│   │   └── application/
+│   │       ├── auth/
+│   │       │   ├── generate_otp.api.ts  # Call backend generate OTP
+│   │       │   ├── verify_otp.api.ts    # Call backend verify OTP
+│   │       │   └── index.ts             # Export auth APIs
+│   │       ├── errors.ts                # ALL data-service errors
+│   │       └── index.ts                 # Export all APIs
+│   ├── page-service/
+│   │   ├── domain/
+│   │   │   ├── login-page/
+│   │   │   │   ├── LoginPage.tsx        # Main login page
+│   │   │   │   ├── PhoneNumberForm.tsx  # Phone form component
+│   │   │   │   ├── OTPForm.tsx          # OTP form component
+│   │   │   │   ├── login_page.module.css
+│   │   │   │   ├── index.ts             # Page logic
+│   │   │   │   └── interface.ts         # Optional interfaces
+│   │   │   └── index.ts                 # Export all pages
+│   │   └── application/
+│   │       ├── login/
+│   │       │   ├── login_page.api.ts    # Login page API wrapper
+│   │       │   └── index.ts             # Export login APIs
+│   │       ├── errors.ts                # ALL page-service errors
+│   │       └── index.ts                 # Export all APIs
+│   ├── App.tsx                          # Main app component
+│   ├── main.tsx                         # App entry point
+│   └── app.module.css                   # Global app styles
+├── constants/
+│   └── api_constants.ts                 # API base URLs
+├── styles.css                           # Global styles
+├── package.json
+├── tsconfig.json
 ├── vite.config.ts
-├── tsconfig.json
-├── package.json
-├── Dockerfile
-├── .dockerignore
-├── .gitignore
-└── README.md
+└── index.html
 ```
 
 ---
 
-## Backend Architecture
+## Domain Models
 
-### Folder Structure
+### Authentication Domain (data-service)
 
-```
-wall-decor-visualizer-backend/
-├── .gitlab/
-│   └── merge-request-templates/
-│       └── mr_description.md
-│
-├── configs/
-│   ├── development/
-│   │   ├── database_config.json
-│   │   ├── gcp_config.json
-│   │   └── gemini_config.json
-│   ├── production/
-│   │   ├── database_config.json
-│   │   ├── gcp_config.json
-│   │   └── gemini_config.json
-│   ├── global_config.json
-│   └── environment.ts
-│
-├── schema/
-│   ├── user_schema.json
-│   ├── session_schema.json
-│   ├── image_schema.json
-│   ├── visualization_schema.json
-│   └── job_schema.json
-│
-├── scripts/
-│   ├── seed_database.ts
-│   ├── migrations.ts
-│   └── setup.ts
-│
-├── src/
-│   ├── data-service/
-│   │   ├── application/
-│   │   │   ├── auth/
-│   │   │   │   ├── login.api.ts
-│   │   │   │   ├── logout.api.ts
-│   │   │   │   ├── refresh.api.ts
-│   │   │   │   └── index.ts
-│   │   │   ├── image/
-│   │   │   │   ├── upload_image.api.ts
-│   │   │   │   ├── get_image.api.ts
-│   │   │   │   ├── delete_image.api.ts
-│   │   │   │   └── index.ts
-│   │   │   ├── gemini/
-│   │   │   │   ├── generate_script.api.ts
-│   │   │   │   └── index.ts
-│   │   │   ├── blender/
-│   │   │   │   ├── execute_blender.api.ts
-│   │   │   │   ├── get_job_status.api.ts
-│   │   │   │   └── index.ts
-│   │   │   ├── errors.ts
-│   │   │   └── index.ts
-│   │   └── domain/
-│   │       ├── auth/
-│   │       │   ├── auth_schema.ts
-│   │       │   ├── interface.ts (optional)
-│   │       │   └── index.ts
-│   │       ├── image/
-│   │       │   ├── image_schema.ts
-│   │       │   ├── interface.ts (optional)
-│   │       │   └── index.ts
-│   │       ├── gemini/
-│   │       │   ├── gemini_schema.ts
-│   │       │   ├── interface.ts (optional)
-│   │       │   └── index.ts
-│   │       ├── blender/
-│   │       │   ├── blender_schema.ts
-│   │       │   ├── interface.ts (optional)
-│   │       │   └── index.ts
-│   │       └── index.ts
-│   │
-│   ├── page-service/
-│   │   ├── application/
-│   │   │   ├── login/
-│   │   │   │   ├── login_page.api.ts
-│   │   │   │   └── index.ts
-│   │   │   ├── upload/
-│   │   │   │   ├── upload_page.api.ts
-│   │   │   │   └── index.ts
-│   │   │   ├── viewer/
-│   │   │   │   ├── viewer_page.api.ts
-│   │   │   │   └── index.ts
-│   │   │   ├── dashboard/
-│   │   │   │   ├── dashboard_page.api.ts
-│   │   │   │   └── index.ts
-│   │   │   ├── errors.ts
-│   │   │   └── index.ts
-│   │   └── domain/
-│   │       ├── session/
-│   │       │   └── index.ts
-│   │       ├── login-page/
-│   │       │   ├── index.ts
-│   │       │   └── interface.ts (optional)
-│   │       ├── upload-page/
-│   │       │   ├── index.ts
-│   │       │   └── interface.ts (optional)
-│   │       ├── viewer-page/
-│   │       │   ├── index.ts
-│   │       │   └── interface.ts (optional)
-│   │       ├── dashboard-page/
-│   │       │   ├── index.ts
-│   │       │   └── interface.ts (optional)
-│   │       └── index.ts
-│   │
-│   └── server.ts
-│
-├── formatters/
-│   ├── date_formatter.ts
-│   ├── image_formatter.ts
-│   └── dimension_formatter.ts
-│
-├── constants/
-│   ├── api_constants.ts
-│   ├── validation_constants.ts
-│   └── database_constants.ts
-│
-├── logger/
-│   ├── request_logger.ts
-│   ├── error_logger.ts
-│   └── performance_logger.ts
-│
-├── dist/
-├── test/
-│   ├── unit/
-│   │   ├── data-service/
-│   │   │   ├── domain/
-│   │   │   └── application/
-│   │   ├── page-service/
-│   │   │   ├── domain/
-│   │   │   └── application/
-│   │   └── fixtures/
-│   ├── integration/
-│   │   ├── auth.test.ts
-│   │   ├── images.test.ts
-│   │   ├── gemini.test.ts
-│   │   └── blender.test.ts
-│   └── fixtures/
-│       └── test_data.ts
-│
-├── test-reports/
-├── .env.example
-├── .env.local
-├── .env.production
-├── tsconfig.json
-├── package.json
-├── Dockerfile
-├── .dockerignore
-├── .gitignore
-└── README.md
-```
-
----
-
-## Domain-Driven Design (DDD) Architecture
-
-### Core Principles
-
-**Service Isolation:**
-- data-service and page-service are completely isolated
-- No direct imports between services
-- Communication only through API calls
-
-**Application Layer:**
-- Contains all API calls to backend
-- One file per API endpoint
-- Named as `{feature}.api.ts`
-- Exports all APIs through `index.ts`
-
-**Domain Layer:**
-- Contains core business logic for each domain
-- Each domain has exactly 3 files:
-  - `{domain}_schema.ts`: Type definitions and interfaces (TypeScript types only, no classes)
-  - `interface.ts`: Additional interface definitions if needed
-  - `index.ts`: Domain logic and functions
-- Domains are isolated - cannot import from other domains
-
-**Domain Layer Rules:**
-
-**data-service domains (MUST have schema files):**
-- Each domain has exactly 3 files:
-  - `{domain}_schema.ts`: Type definitions and interfaces (TypeScript types only, no classes)
-  - `interface.ts`: Additional interface definitions if needed
-  - `index.ts`: Domain logic and functions
-- Domains are isolated - cannot import from other domains
-- Cannot import domain types into application layer
-
-**page-service domains (NO schema files required):**
-- Each component domain contains:
-  - `index.ts`: Component logic functions ONLY
-  - `interface.ts`: Optional - only if additional interfaces are needed
-  - NO schema files required
-- Domains are isolated from each other
-- Can call data-service domains to fetch data
-- Logic functions work with inline types or data-service types
-
-### Example: data-service Structure
-
-**Application Layer (API Calls):**
+**Schema Types** (`auth_schema.ts`):
 ```typescript
-// data-service/application/auth/login.api.ts
-import { api } from '@validators/email_validator';
-
-// Application layer defines its own request/response types
-export interface ILoginApiRequest {
-  email: string;
-  password: string;
-}
-
-export interface ILoginApiResponse {
-  success: boolean;
-  token: string;
-  userId: string;
-}
-
-export const loginApi = async (credentials: ILoginApiRequest): Promise<ILoginApiResponse> => {
-  const response = await api.post('/api/auth/login', credentials);
-  return response.data;
-};
-```
-
-**Domain Layer (Business Logic):**
-```typescript
-// data-service/domain/auth/auth_schema.ts
-// Domain defines its own types - separate from application layer
 export interface IUser {
   id: string;
-  email: string;
-  passwordHash: string;
+  phoneNumber: string;
   createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface IAuthToken {
   token: string;
-  expiresAt: number;
+  expiresAt: Date;
   userId: string;
 }
 
+export interface IOTP {
+  otp: string;
+  phoneNumber: string;
+  expiresAt: Date;
+  createdAt: Date;
+  used: boolean;
+  failedAttempts: number;
+  lockedUntil: Date | null;
+}
+
 export type AuthStatus = 'authenticated' | 'unauthenticated' | 'expired';
-
-// data-service/domain/auth/index.ts
-import { IUser, IAuthToken } from './auth_schema';
-
-// Domain logic works with domain types only
-export const validateUserCredentials = (user: IUser, password: string): boolean => {
-  return !!user.id && !!user.passwordHash;
-};
-
-export const generateAuthToken = (userId: string): IAuthToken => {
-  return {
-    token: generateToken(),
-    expiresAt: Date.now() + 3600000,
-    userId
-  };
-};
+export type OTPStatus = 'valid' | 'expired' | 'used' | 'locked';
 ```
 
-**Key Principle:**
-- Application layer has `ILoginApiRequest` and `ILoginApiResponse`
-- Domain layer has `IUser` and `IAuthToken`
-- Application layer does NOT import domain types
-- Each layer owns its type definitions
+**Domain Functions** (`index.ts`):
+- `validatePhoneNumber(phone: string): boolean`
+- `validateOTP(otp: string): boolean`
+- `sanitizePhoneNumber(phone: string): string`
+- `sanitizeOTP(otp: string): string`
+- `generateOTP(): string` (returns fixed "2213" for demo)
+- `generateAuthToken(userId: string): IAuthToken`
+- `verifyAuthToken(token: string): { valid: boolean; userId?: string }`
+- `hashPhoneNumber(phone: string): string`
+- `isOTPExpired(otp: IOTP): boolean`
+- `isOTPLocked(otp: IOTP): boolean`
+- `shouldPermanentlyInvalidate(failedAttempts: number): boolean`
 
-### Example: page-service Structure
+### Image Domain (data-service)
 
-**Important: Components as Domains in page-service**
-
-In page-service, each component can be treated as a domain. This means:
-- Each UI component (LoginForm, ImageUpload, etc.) can have its own domain folder
-- Each component domain contains the component logic, state management, and UI rendering
-- Component domains can call data-service domains to fetch data
-- Component domains are isolated from each other
-
-**Application Layer (Page Orchestration):**
+**Schema Types** (`image_schema.ts`):
 ```typescript
-// page-service/application/login/login_page.api.ts
-import { loginApi } from '@data-service/application/auth';
-import { validateLoginResponse } from '@data-service/domain/auth';
-import { storeUserSession } from '../domain/session/index';
+export interface IImage {
+  id: string;
+  userId: string;
+  filename: string;
+  gcpObjectPath: string;
+  uploadedAt: Date;
+  fileSize: number;
+  mimeType: string;
+}
 
-export const handleLoginPage = async (email: string, password: string) => {
-  const response = await loginApi({ email, password });
-  
-  if (validateLoginResponse(response)) {
-    storeUserSession(response.user, response.token);
-    return { success: true, user: response.user };
-  }
-  
-  return { success: false, error: 'Login failed' };
-};
+export type ImageFormat = 'jpeg' | 'png' | 'webp';
+export type UploadStatus = 'pending' | 'uploading' | 'completed' | 'failed';
 ```
 
-**Domain Layer (Page Logic & Component Domains):**
-
-Each component can be a domain in page-service. Page-service domains do NOT require schema files - they only contain logic.
-
-```typescript
-// page-service/domain/session/index.ts
-// Session domain logic (no schema file needed)
-export const storeUserSession = (user: IUser, token: string) => {
-  localStorage.setItem('user', JSON.stringify(user));
-  localStorage.setItem('token', token);
-};
-
-export const getStoredSession = () => {
-  const user = localStorage.getItem('user');
-  const token = localStorage.getItem('token');
-  return { user: user ? JSON.parse(user) : null, token };
-};
-
-// page-service/domain/login-form/index.ts
-// Component domain for LoginForm component (no schema file needed)
-export const initializeLoginForm = () => {
-  return {
-    email: '',
-    password: '',
-    isLoading: false,
-    error: null
-  };
-};
-
-export const validateLoginForm = (state: { email: string; password: string }): boolean => {
-  return !!state.email && !!state.password && state.email.includes('@');
-};
-
-export const handleLoginFormSubmit = async (
-  state: { email: string; password: string },
-  onSubmit: (email: string, password: string) => Promise<void>,
-  onError: (error: string) => void
-): Promise<void> => {
-  if (!validateLoginForm(state)) {
-    onError('Invalid email or password');
-    return;
-  }
-  
-  try {
-    await onSubmit(state.email, state.password);
-  } catch (error) {
-    onError(error.message);
-  }
-};
-
-// page-service/domain/image-upload/index.ts
-// Component domain for ImageUpload component (no schema file needed)
-export const initializeImageUpload = () => {
-  return {
-    files: [],
-    uploadProgress: 0,
-    isUploading: false,
-    error: null
-  };
-};
-
-export const validateImageFile = (
-  file: File,
-  maxSize: number,
-  acceptedFormats: string[]
-): boolean => {
-  if (file.size > maxSize) {
-    return false;
-  }
-  
-  const extension = file.name.split('.').pop()?.toLowerCase();
-  return acceptedFormats.includes(extension || '');
-};
-
-export const handleImageUpload = async (
-  files: File[],
-  maxSize: number,
-  acceptedFormats: string[],
-  onUploadComplete: (files: File[]) => Promise<void>
-): Promise<void> => {
-  const validFiles = files.filter(file => validateImageFile(file, maxSize, acceptedFormats));
-  
-  if (validFiles.length === 0) {
-    throw new Error('No valid files to upload');
-  }
-  
-  await onUploadComplete(validFiles);
-};
-```
-
-**Key Principle: Components as Domains in page-service**
-- Each component in page-service can have its own domain folder
-- Page-service component domains contain:
-  - `index.ts`: Component logic functions ONLY (no schema file required)
-  - `interface.ts`: Optional - only if additional interfaces are needed
-- Component domains are isolated from each other
-- Component domains can call data-service domains to fetch data
-- This keeps component logic organized and testable
-- **Important**: page-service domains do NOT require schema files - they only contain logic functions
+**Domain Functions** (`index.ts`):
+- `validateImageFormat(mimeType: string): boolean`
+- `validateImageSize(fileSize: number): boolean`
+- `generateImageId(): string`
+- `extractImageMetadata(file: File): IImageMetadata`
 
 ---
 
-## Backend Architecture (DDD Pattern)
+## API Endpoints
 
-The backend follows the same DDD architecture as the frontend with data-service and page-service separation.
+### Authentication APIs
 
-### Core Principles
+#### POST /api/auth/generate-otp
+**Purpose**: Generate and send OTP to phone number
 
-**Service Isolation:**
-- data-service: Handles all data operations (auth, images, gemini, blender)
-- page-service: Handles page-level UI construction by calling data-service
-- No direct imports between services
-- Communication only through API calls
-
-**Application Layer:**
-- Contains all API endpoint handlers
-- One file per API endpoint
-- Named as `{feature}.api.ts`
-- Exports all APIs through `index.ts`
-
-**Domain Layer:**
-- data-service domains: Contain core business logic for data operations
-- page-service domains: Represent pages shown to users, orchestrate data-service calls to build UI
-- Each domain has exactly 3 files:
-  - `{domain}_schema.ts`: Type definitions and interfaces (TypeScript types only, no classes)
-  - `interface.ts`: Additional interface definitions if needed
-  - `index.ts`: Domain logic and functions
-- Domains are isolated - cannot import from other domains in same service
-- page-service domains CAN call data-service domains to fetch data for UI construction
-
-### Example: Backend data-service Structure
-
-**Application Layer (API Handlers):**
+**Request**:
 ```typescript
-// data-service/application/auth/login.api.ts
-import { Request, Response } from 'express';
-import { validateLoginRequest } from '../domain/auth/index';
-import { ILoginRequest, ILoginResponse } from '../domain/auth/auth_schema';
-
-export const handleLogin = async (req: Request, res: Response): Promise<void> => {
-  const credentials: ILoginRequest = req.body;
-  
-  if (!validateLoginRequest(credentials)) {
-    res.status(400).json({ error: 'Invalid credentials' });
-    return;
-  }
-  
-  const response: ILoginResponse = await authenticateUser(credentials);
-  res.json(response);
-};
+{
+  phoneNumber: string;  // 10-digit phone number
+  ipAddress?: string;   // Optional for rate limiting
+}
 ```
 
-**Domain Layer (Business Logic):**
+**Response**:
 ```typescript
-// data-service/domain/auth/auth_schema.ts
-export interface ILoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface ILoginResponse {
+{
   success: boolean;
-  user: IUser;
-  token: string;
-  expiresIn: number;
+  message: string;
+  retryAfter?: number;  // Seconds to wait if rate limited
 }
-
-export type AuthStatus = 'authenticated' | 'unauthenticated' | 'expired';
-
-// data-service/domain/auth/index.ts
-import { ILoginRequest } from './auth_schema';
-
-export const validateLoginRequest = (request: ILoginRequest): boolean => {
-  return !!request.email && !!request.password;
-};
 ```
 
-### Example: Backend page-service Structure
+**Rate Limiting**:
+- 3 requests per phone number per 10 minutes
+- 10 requests per IP address per hour
 
-**Page-service Purpose:**
-- Domains in page-service call data-service to fetch data and build the UI response
-- Each domain represents a page shown to the user
-- Domains orchestrate data-service calls to construct complete page data
+**Validation**:
+- Phone number must be exactly 10 digits
+- Phone number must be numeric only
 
-**Application Layer (Page Handlers):**
+---
+
+#### POST /api/auth/verify-otp
+**Purpose**: Verify OTP and authenticate user
+
+**Request**:
 ```typescript
-// page-service/application/login/login_page.api.ts
-import { Request, Response } from 'express';
-import { buildLoginPageUI } from '../domain/login-page/index';
-
-export const handleLoginPageRequest = async (req: Request, res: Response): Promise<void> => {
-  const pageData = await buildLoginPageUI();
-  res.json(pageData);
-};
+{
+  phoneNumber: string;  // 10-digit phone number
+  otp: string;          // 4-digit OTP
+}
 ```
 
-**Domain Layer (Page UI Construction):**
+**Response**:
 ```typescript
-// page-service/domain/login-page/login_page_schema.ts
-export interface ILoginPageUI {
-  title: string;
-  form: ILoginForm;
-  footer: IFooter;
-}
-
-export interface ILoginForm {
-  fields: IFormField[];
-  submitButton: IButton;
-}
-
-// page-service/domain/login-page/index.ts
-import { loginApi } from '@data-service/application/auth';
-import { ILoginPageUI } from './login_page_schema';
-
-export const buildLoginPageUI = async (): Promise<ILoginPageUI> => {
-  // Call data-service to get auth data
-  const authData = await loginApi();
-  
-  // Build UI structure for login page
-  return {
-    title: 'Login',
-    form: {
-      fields: [
-        { name: 'email', type: 'email', label: 'Email' },
-        { name: 'password', type: 'password', label: 'Password' }
-      ],
-      submitButton: { text: 'Login', action: 'submit' }
-    },
-    footer: { text: 'Forgot password?' }
+{
+  success: boolean;
+  token?: string;       // JWT token (on success)
+  userId?: string;      // User ID (on success)
+  error?: {
+    message: string;
+    code: string;
+    remainingAttempts?: number;
+    lockedUntil?: number;  // Seconds until unlock
   };
-};
-```
-
-**Example: Upload Page Domain (Calls data-service)**
-```typescript
-// page-service/domain/upload-page/upload_page_schema.ts
-export interface IUploadPageUI {
-  title: string;
-  uploadArea: IUploadArea;
-  recentImages: IImage[];
-  catalog: ICatalog;
 }
-
-// page-service/domain/upload-page/index.ts
-import { getImages } from '@data-service/application/image';
-import { getCatalog } from '@data-service/application/catalog';
-import { IUploadPageUI } from './upload_page_schema';
-
-export const buildUploadPageUI = async (userId: string): Promise<IUploadPageUI> => {
-  // Call data-service to fetch user's images
-  const userImages = await getImages(userId);
-  
-  // Call data-service to fetch catalog
-  const catalog = await getCatalog();
-  
-  // Build complete upload page UI
-  return {
-    title: 'Upload & Visualize',
-    uploadArea: { maxSize: 10485760, acceptedFormats: ['jpg', 'png'] },
-    recentImages: userImages.slice(0, 5),
-    catalog: catalog
-  };
-};
 ```
+
+**OTP Lockout Logic**:
+- 3 failed attempts: Lock for 1 minute
+- 5 failed attempts: Permanently invalidate OTP
+- OTP expires after 10 minutes
+- OTP can only be used once
+
+**Security**:
+- Constant-time comparison to prevent timing attacks
+- SHA256 hashing for phone numbers in logs
+- JWT tokens with 1-hour expiration
 
 ---
 
-## Naming Conventions
+### Image APIs
 
-### Folders
+#### POST /api/images/upload
+**Purpose**: Upload wall image to GCP Cloud Storage
 
-- **Kebab-case** for all folder names (e.g., `data-service`, `page-service`, `auth`, `image-upload`)
-- Applies to all directory levels: services, domains, components, utilities
-
-### Files
-
-**Frontend:**
-- Components: `PascalCase.tsx` (e.g., `LoginForm.tsx`)
-- Hooks: `use_xxx.ts` (e.g., `use_auth.ts`)
-- API files: `{feature}.api.ts` (e.g., `login.api.ts`)
-- Schema files: `{domain}_schema.ts` (e.g., `auth_schema.ts`) - TypeScript types and interfaces only
-- Interface files: `interface.ts` (e.g., in `auth/interface.ts`)
-- Domain logic: `index.ts`
-- Styles: `*.module.css` (e.g., `login_form.module.css`)
-- Tests: `*.test.tsx` or `*.spec.tsx`
-- Redux slices: `{feature}_slice.ts` (e.g., `auth_slice.ts`)
-- Validators: `{feature}_validator.ts` (e.g., `email_validator.ts`)
-- Formatters: `{feature}_formatter.ts` (e.g., `date_formatter.ts`)
-- Constants: `{feature}_constants.ts` (e.g., `api_constants.ts`)
-- Errors: `{feature}_error.ts` (e.g., `auth_error.ts`)
-
-**Backend:**
-- Controllers: `{feature}_controller.ts` (e.g., `auth_controller.ts`)
-- Services: `{feature}_service.ts` (e.g., `image_service.ts`)
-- Models: `PascalCase.ts` (e.g., `User.ts`, `Session.ts`)
-- Routes: `{feature}.ts` (e.g., `auth.ts`, `images.ts`)
-- Middleware: `{feature}.ts` (e.g., `auth.ts`, `error_handler.ts`)
-- Schema files: `{domain}_schema.ts` (e.g., `auth_schema.ts`) - TypeScript types and interfaces only
-- Interface files: `interface.ts` (e.g., in `auth/interface.ts`)
-- Domain logic: `index.ts`
-- Validators: `{feature}_validator.ts` (e.g., `email_validator.ts`)
-- Formatters: `{feature}_formatter.ts` (e.g., `date_formatter.ts`)
-- Constants: `{feature}_constants.ts` (e.g., `api_constants.ts`)
-- Errors: `{feature}_error.ts` (e.g., `auth_error.ts`)
-- Loggers: `{feature}_logger.ts` (e.g., `request_logger.ts`)
-- Tests: `*.test.ts` or `*.spec.ts`
-
-### Functions & Variables
-
-- camelCase for functions and variables
-- PascalCase for components and classes
-- UPPER_SNAKE_CASE for constants
-
----
-
-## Import Patterns
-
-**Allowed Imports:**
+**Request**: Multipart form data
 ```typescript
-// ✅ Own domain logic
-import { validateUserCredentials } from '../domain/auth/index';
-
-// ✅ Own application types
-import { ILoginApiRequest, ILoginApiResponse } from './login.api';
-
-// ✅ Validators, formatters, errors (feature-specific)
-import { validateEmail } from '@validators/email_validator';
-import { formatDate } from '@formatters/date_formatter';
-import { AuthError } from '@errors/auth_error';
-
-// ✅ From other service (only in page-service)
-import { loginApi } from '@data-service/application/auth';
-```
-
-**Forbidden Imports:**
-```typescript
-// ❌ Domain types in application layer
-import { IUser, IAuthToken } from '../domain/auth/auth_schema';
-
-// ❌ Cross-domain in same service
-import { validateImageFile } from '../image/index';
-
-// ❌ Direct imports between services (except page-service calling data-service)
-import { authDomain } from '@data-service/domain/auth';
-
-// ❌ Generic utility files
-import { helpers } from '@utils/helpers';
-import { manager } from '@utils/manager';
-
-// ❌ Circular imports
-```
-
----
-
-## Clean Code Principles
-
-**Minimize Shared Code Between Layers:**
-- Domain layer: Owns its types, logic, and business rules
-- Application layer: Owns its request/response types and API handling
-- Avoid sharing domain types with application layer
-- Each layer defines types for its specific concerns
-
-**Type Definition Strategy:**
-- Domain types: Internal business models (e.g., `IUser`, `IAuthToken`)
-- Application types: API contracts (e.g., `ILoginApiRequest`, `ILoginApiResponse`)
-- Never import domain types into application layer
-- Application layer can call domain functions but should not depend on domain types
-
-**Function Parameters:**
-- For 1-3 parameters: Use individual parameters
-- For 4+ parameters: Use destructured object only
-- Never create wrapper objects for simple parameter passing
-- Exception: External API requests/responses always use defined type objects
-
-**Examples:**
-
-```typescript
-// ✅ CORRECT - 3 or fewer parameters
-export const validateUser = (email: string, password: string, userId: string): boolean => {
-  return !!email && !!password && !!userId;
-};
-
-// ✅ CORRECT - 4+ parameters use destructured object
-export const createUser = ({ email, password, firstName, lastName, role }: {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-}): IUser => {
-  return { email, password, firstName, lastName, role };
-};
-
-// ✅ CORRECT - External API always uses typed object
-export interface ILoginApiRequest {
-  email: string;
-  password: string;
+{
+  image: File;          // Image file (JPEG, PNG, WebP)
+  userId: string;       // Authenticated user ID
 }
-
-export const loginApi = async (request: ILoginApiRequest): Promise<ILoginApiResponse> => {
-  const response = await api.post('/api/auth/login', request);
-  return response.data;
-};
-
-// ❌ INCORRECT - Unnecessary wrapper object for 2 parameters
-export const validateUser = (params: { email: string; password: string }): boolean => {
-  return !!params.email && !!params.password;
-};
-
-// ❌ INCORRECT - Importing domain types to application
-import { IUser } from '../domain/auth/auth_schema';
-export const handleLogin = (user: IUser): void => { };
 ```
 
-**Benefits:**
-- Clear separation of concerns
-- Easier to refactor domain logic without affecting API contracts
-- Prevents tight coupling between layers
-- Simplifies testing - each layer can be tested independently
-- Reduces code duplication and shared dependencies
-- Cleaner function signatures for simple operations
-- Consistent API contracts for external clients
-
----
-
-## Folder Structure Constraints in src/
-
-**CRITICAL RULE: Only These Folders Allowed in src/**
-
-The `src/` directory can ONLY contain the following folders:
-1. `data-service/` - Data service with application and domain layers
-2. `page-service/` - Page service with application and domain layers
-3. `errors/` - Error definitions (error.ts files)
-
-**Everything else MUST be placed outside src/ directory:**
-- `validators/` → Move to root level or configs/
-- `formatters/` → Move to root level or configs/
-- `constants/` → Move to root level or configs/
-- `logger/` → Move to root level or configs/
-- `types/` → Move to root level or configs/
-- `styles/` → Move to root level or configs/
-- `hooks/` → Move to root level or configs/
-- `store/` → Move to root level or configs/
-- `components/` → Move to root level or configs/
-- `pages/` → Move to root level or configs/
-- `public/` → Move to root level
-- Any other folders → Move outside src/
-
-**Allowed Structure in src/:**
-```
-src/
-├── data-service/
-│   ├── application/
-│   │   ├── auth/
-│   │   ├── image/
-│   │   ├── gemini/
-│   │   ├── blender/
-│   │   └── index.ts
-│   └── domain/
-│       ├── auth/
-│       ├── image/
-│       ├── gemini/
-│       ├── blender/
-│       └── index.ts
-│
-├── page-service/
-│   ├── application/
-│   │   ├── login/
-│   │   ├── upload/
-│   │   ├── viewer/
-│   │   └── index.ts
-│   └── domain/
-│       ├── login-page/
-│       ├── upload-page/
-│       ├── viewer-page/
-│       └── index.ts
-│
-├── errors/
-│   ├── auth_error.ts
-│   ├── upload_error.ts
-│   └── validation_error.ts
-│
-├── App.tsx
-├── main.tsx
-└── vite_env.d.ts
+**Response**:
+```typescript
+{
+  success: boolean;
+  imageId?: string;     // Unique image identifier
+  gcpUrl?: string;      // GCP Cloud Storage URL
+  error?: string;
+}
 ```
 
-**Why This Rule Exists:**
-- Keeps src/ focused on core business logic (data-service and page-service)
-- Prevents src/ from becoming a dumping ground for miscellaneous files
-- Makes it clear what the core application logic is
-- Simplifies code organization and navigation
-- Enforces clean architecture principles
-- Makes it easier to extract services later
-
-**File Organization Principles**
-
-**No Generic Files:**
-- Every file must have a specific, well-defined purpose
-- No `helpers.ts`, `utils.ts`, `manager.ts`, or similar catch-all files
-- Each utility function belongs in a feature-specific file
-
-**File Naming Pattern:**
-- `{feature}_{type}.ts` where type is: `validator`, `formatter`, `error`, `logger`, `constants`
-- Example: `email_validator.ts`, `date_formatter.ts`, `auth_error.ts`
-
-**Organization by Feature:**
-- Validators grouped in `validators/` folder with feature-specific files
-- Formatters grouped in `formatters/` folder with feature-specific files
-- Constants grouped in `constants/` folder with feature-specific files
-- Errors grouped in `errors/` folder with feature-specific files (ONLY errors/ allowed in src/)
-- Loggers grouped in `logger/` folder with feature-specific files
-
-**Benefits:**
-- Clear code ownership and responsibility
-- Easy to locate related functionality
-- Prevents code from becoming a dumping ground
-- Encourages focused, single-purpose modules
-- Simplifies testing and maintenance
+**Validation**:
+- Supported formats: JPEG, PNG, WebP
+- Maximum file size: 10MB
+- Authenticated users only
 
 ---
 
-1. **Clear Separation of Concerns**: Application handles API calls, domain handles logic
-2. **Scalability**: Easy to add new domains without affecting existing ones
-3. **Testability**: Each domain can be tested independently
-4. **Maintainability**: Clear boundaries prevent spaghetti code
-5. **Reusability**: Domain logic can be reused across different applications
-6. **Type Safety**: Interfaces ensure type consistency across domains
+## Data Flow
+
+### Authentication Flow
+
+```
+1. User enters phone number
+   ↓
+2. Frontend validates format (10 digits)
+   ↓
+3. Frontend calls POST /api/auth/generate-otp
+   ↓
+4. Backend validates phone number
+   ↓
+5. Backend checks rate limiting
+   ↓
+6. Backend generates OTP ("2213")
+   ↓
+7. Backend stores OTP in MongoDB (10-minute expiration)
+   ↓
+8. Backend returns success response
+   ↓
+9. Frontend displays OTP input form
+   ↓
+10. User enters OTP
+   ↓
+11. Frontend calls POST /api/auth/verify-otp
+   ↓
+12. Backend validates OTP format
+   ↓
+13. Backend checks OTP status (expired, used, locked)
+   ↓
+14. Backend compares OTP (constant-time)
+   ↓
+15. Backend generates JWT token
+   ↓
+16. Backend marks OTP as used
+   ↓
+17. Backend creates/updates user record
+   ↓
+18. Backend returns token and userId
+   ↓
+19. Frontend stores token (localStorage + cookies)
+   ↓
+20. Frontend redirects to dashboard
+```
+
+### Image Upload Flow
+
+```
+1. User selects image (file browser or camera)
+   ↓
+2. Frontend validates format and size
+   ↓
+3. Frontend calls POST /api/images/upload
+   ↓
+4. Backend validates authentication token
+   ↓
+5. Backend validates image format and size
+   ↓
+6. Backend generates unique imageId
+   ↓
+7. Backend uploads to GCP Cloud Storage
+   ↓
+8. Backend stores metadata in MongoDB
+   ↓
+9. Backend returns imageId and GCP URL
+   ↓
+10. Frontend displays uploaded image
+```
 
 ---
 
-## Migration Path
+## Security Considerations
 
-This DDD architecture is designed to scale:
-- **Phase 1 (Current)**: Frontend with data-service and page-service
-- **Phase 2**: Extract data-service to backend microservice
-- **Phase 3**: Extract page-service to separate frontend service
-- **Phase 4**: Add additional domain services as needed
+### Authentication
+- JWT tokens with 1-hour expiration
+- HTTP-only cookies for token storage
+- Secure flag enabled in production
+- SameSite=Strict for CSRF protection
+
+### Rate Limiting
+- Phone number: 3 OTP requests per 10 minutes
+- IP address: 10 OTP requests per hour
+- Prevents brute force attacks
+
+### OTP Security
+- Fixed OTP "2213" for demo (production: random 4-digit)
+- 10-minute expiration
+- One-time use enforcement
+- Lockout after 3 failed attempts (1 minute)
+- Permanent invalidation after 5 failed attempts
+- Constant-time comparison to prevent timing attacks
+
+### Data Protection
+- Phone numbers hashed (SHA256) in logs
+- Sensitive data never logged in plain text
+- Environment variables for secrets
+- HTTPS in production
+
+### Input Validation
+- All inputs validated on both frontend and backend
+- Type checking with TypeScript
+- Sanitization before database operations
+- SQL injection prevention (MongoDB parameterized queries)
 
 ---
 
-## Tools and Frameworks
+## Performance Considerations
 
-**Backend:**
-- Test Framework: Vitest
-- HTTP Testing: Supertest
-- Mocking: Vitest mocks
-- Coverage: Vitest coverage
-- CI/CD: GitHub Actions
+### Frontend
+- Code splitting by route
+- Lazy loading for components
+- Image optimization
+- CSS Modules for scoped styles
+- Vite for fast builds and HMR
 
-**Frontend:**
-- Test Framework: Vitest
-- Component Testing: React Testing Library
-- E2E Testing: Playwright
-- Mocking: Vitest mocks
-- Coverage: Vitest coverage
-- CI/CD: GitHub Actions
+### Backend
+- MongoDB indexes on frequently queried fields
+- Connection pooling for database
+- Async/await for non-blocking operations
+- Rate limiting to prevent abuse
+- TTL indexes for automatic OTP cleanup
+
+### Caching
+- No Redis for demo (simplified architecture)
+- Browser caching for static assets
+- Future: Redis for session management
 
 ---
 
-## Configuration Files
+## Monitoring & Logging
 
-**Frontend tsconfig.json:**
+### Current (Demo)
+- Console logging for all operations
+- Error logging with stack traces
+- Request/response logging
+- Performance timing logs
+
+### Future (Post-Demo)
+- Centralized logging (e.g., Winston, Pino)
+- Error tracking (e.g., Sentry)
+- Performance monitoring (e.g., New Relic)
+- Uptime monitoring
+- Alert system for critical failures
+
+---
+
+## Deployment Strategy
+
+### Current (Demo)
+- Local development environment
+- Manual deployment
+- Environment variables in `.env.local`
+
+### Future (Post-Demo)
+- CI/CD pipeline (GitHub Actions)
+- Automated testing before deployment
+- Staging environment
+- Production environment
+- Blue-green deployment
+- Rollback capability
+
+---
+
+## Scalability Considerations
+
+### Current Architecture
+- Monolithic backend (suitable for demo)
+- Single MongoDB instance
+- Single GCP bucket
+
+### Future Scaling
+- Microservices architecture
+- MongoDB replica sets
+- Load balancing
+- CDN for static assets
+- Horizontal scaling for backend
+- Caching layer (Redis)
+- Message queue for async operations
+
+---
+
+## Testing Strategy
+
+### Unit Tests
+- 80%+ coverage target
+- Test all domain functions
+- Test all API endpoints
+- Mock external dependencies
+
+### Integration Tests
+- Test service interactions
+- Test database operations
+- Test API contracts
+- Test authentication flow
+
+### E2E Tests
+- Test critical user paths
+- Test login flow
+- Test image upload flow
+- Playwright for browser automation
+
+### Continuous Testing
+- Automated tests every 6 hours
+- Pre-commit hooks for unit tests
+- CI pipeline for full test suite
+- Coverage reports on every PR
+
+---
+
+## Error Handling
+
+### Error Classes
+All errors centralized in `application/errors.ts`:
+
+**data-service errors**:
+- `AuthError` - Base authentication error
+- `InvalidPhoneNumberError` - Invalid phone format
+- `InvalidOTPError` - Invalid OTP format
+- `OTPExpiredError` - OTP has expired
+- `OTPLockedError` - OTP locked due to failed attempts
+- `RateLimitError` - Rate limit exceeded
+- `NetworkError` - Network/database errors
+
+**page-service errors**:
+- `PageError` - Base page error
+- `LoginPageError` - Login page specific errors
+- `UploadPageError` - Upload page specific errors
+
+### Error Response Format
+```typescript
+{
+  success: false,
+  error: {
+    message: string;      // User-friendly message
+    code: string;         // Error code for client handling
+    details?: object;     // Additional error details
+  }
+}
+```
+
+---
+
+## Configuration Management
+
+### Environment Variables
+
+**Backend** (`.env.local`):
+```bash
+# Server
+PORT=3000
+NODE_ENV=development
+
+# Database
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/wall-decor-visualizer
+
+# GCP
+GCP_PROJECT_ID=your-project-id
+GCP_BUCKET_NAME=wall-decor-visualizer-images
+GCP_CREDENTIALS_PATH=./gcp-credentials.json
+
+# JWT
+JWT_SECRET=your-jwt-secret-key
+JWT_EXPIRY=3600
+
+# Gemini API
+GEMINI_API_KEY=your-gemini-api-key
+GEMINI_MODEL=gemini-1.5-pro
+
+# Rate Limiting
+OTP_RATE_LIMIT_PHONE=3
+OTP_RATE_LIMIT_PHONE_WINDOW=600
+OTP_RATE_LIMIT_IP=10
+OTP_RATE_LIMIT_IP_WINDOW=3600
+```
+
+**Frontend** (`.env.local`):
+```bash
+VITE_API_BASE_URL=http://localhost:3000
+VITE_APP_NAME=Wall Decor Visualizer
+```
+
+---
+
+## Dependencies
+
+### Backend Dependencies
 ```json
 {
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@data-service/*": ["src/data-service/*"],
-      "@page-service/*": ["src/page-service/*"],
-      "@components/*": ["src/components/*"],
-      "@pages/*": ["src/pages/*"],
-      "@hooks/*": ["src/hooks/*"],
-      "@store/*": ["src/store/*"],
-      "@utils/*": ["src/utils/*"],
-      "@types/*": ["src/types/*"],
-      "@styles/*": ["src/styles/*"]
-    }
-  }
+  "express": "^4.18.0",
+  "mongoose": "^8.0.0",
+  "@google-cloud/storage": "^7.0.0",
+  "jsonwebtoken": "^9.0.0",
+  "bcrypt": "^5.1.0",
+  "dotenv": "^16.0.0",
+  "cors": "^2.8.5"
 }
 ```
 
-**Frontend vite.config.ts:**
-```typescript
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import path from 'path';
-
-export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: {
-      '@data-service': path.resolve(__dirname, './src/data-service'),
-      '@page-service': path.resolve(__dirname, './src/page-service'),
-      '@components': path.resolve(__dirname, './src/components'),
-      '@pages': path.resolve(__dirname, './src/pages'),
-      '@hooks': path.resolve(__dirname, './src/hooks'),
-      '@store': path.resolve(__dirname, './src/store'),
-      '@utils': path.resolve(__dirname, './src/utils'),
-      '@types': path.resolve(__dirname, './src/types'),
-      '@styles': path.resolve(__dirname, './src/styles'),
-    }
-  }
-});
+### Frontend Dependencies
+```json
+{
+  "react": "^18.2.0",
+  "react-dom": "^18.2.0",
+  "react-router-dom": "^6.20.0",
+  "axios": "^1.6.0"
+}
 ```
 
----
-
-## TypeScript Guidelines
-
-**Types Only - No Classes:**
-- Use TypeScript `type` and `interface` for all type definitions
-- Never use `class` keyword for domain models or data structures
-- Use `type` for unions, primitives, and simple type aliases
-- Use `interface` for object shapes and contracts
-- All schema files contain only type definitions
-
-**Example:**
-```typescript
-// ✅ CORRECT - Types only
-export type UserRole = 'admin' | 'user' | 'guest';
-export interface IUser {
-  id: string;
-  email: string;
-  role: UserRole;
-}
-
-// ❌ INCORRECT - Classes not allowed
-export class User {
-  id: string;
-  email: string;
-  role: UserRole;
+### Dev Dependencies
+```json
+{
+  "typescript": "^5.3.0",
+  "vite": "^5.0.0",
+  "vitest": "^1.0.0",
+  "@testing-library/react": "^14.0.0",
+  "playwright": "^1.40.0"
 }
 ```
 
 ---
 
----
+## Future Enhancements
 
-## Comprehensive Folder Structure Rules
+### Phase 2 (Post-Demo)
+- Dimension marking on images
+- Gemini API integration for Blender script generation
+- Headless Blender execution
+- 3D model viewer
+- Model catalog
+- Drag-and-drop model application
 
-This section documents all 15 rules for creating folder structures correctly. Use this as a reference when generating new features, pages, or components.
+### Phase 3
+- Material quantity calculator
+- Bill of materials generation
+- Model persistence and sharing
+- Advanced 3D manipulation
+- Export to multiple formats
 
-### Rule 1: src/ Directory - ONLY data-service and page-service
-
-**The src/ directory can ONLY contain:**
-1. `data-service/` - Data operations service
-2. `page-service/` - Page UI service
-3. `errors/` - Error definitions (ONLY in backend, NOT in frontend)
-4. Root-level files: `App.tsx`, `main.tsx`, `server.ts`, `vite_env.d.ts`
-
-**Everything else MUST be outside src/:**
-- `validators/`, `formatters/`, `constants/`, `hooks/`, `store/`, `types/`, `styles/`, `logger/`
-- `components/`, `pages/`, `public/`, `configs/`, `scripts/`, `schema/`
-
-**Why:** Keeps src/ focused on core business logic (data-service and page-service). Prevents src/ from becoming a dumping ground.
-
----
-
-### Rule 2: data-service Structure - MUST Have Schema Files
-
-**data-service MUST follow this structure:**
-
-```
-data-service/
-├── application/
-│   ├── {feature}/
-│   │   ├── {feature}.api.ts
-│   │   └── index.ts
-│   ├── errors.ts (all errors go here)
-│   └── index.ts
-└── domain/
-    ├── {domain}/
-    │   ├── {domain}_schema.ts (REQUIRED - types only)
-    │   ├── interface.ts (optional)
-    │   └── index.ts
-    └── index.ts
-```
-
-**Key Rules:**
-- Application layer: One file per API endpoint named `{feature}.api.ts`
-- Domain layer: MUST have `{domain}_schema.ts` with type definitions
-- Domain layer: MUST have `index.ts` with domain logic functions
-- Domain layer: Optional `interface.ts` for additional interfaces
-- Errors: ALL errors go in `application/errors.ts` (NOT separate errors folder)
-- Domains are isolated - cannot import from other domains
-
-**Example:**
-```
-data-service/
-├── application/
-│   ├── auth/
-│   │   ├── login.api.ts
-│   │   ├── logout.api.ts
-│   │   └── index.ts
-│   ├── image/
-│   │   ├── upload_image.api.ts
-│   │   ├── get_image.api.ts
-│   │   └── index.ts
-│   ├── errors.ts
-│   └── index.ts
-└── domain/
-    ├── auth/
-    │   ├── auth_schema.ts (REQUIRED)
-    │   ├── interface.ts (optional)
-    │   └── index.ts
-    ├── image/
-    │   ├── image_schema.ts (REQUIRED)
-    │   ├── interface.ts (optional)
-    │   └── index.ts
-    └── index.ts
-```
+### Phase 4
+- Real-time collaboration
+- Mobile app (React Native)
+- AR visualization
+- AI-powered design suggestions
+- Integration with e-commerce platforms
 
 ---
 
-### Rule 3: page-service Structure - NO Schema Files Required
-
-**page-service MUST follow this structure:**
-
-```
-page-service/
-├── application/
-│   ├── {page}/
-│   │   ├── {page}_page.api.ts
-│   │   └── index.ts
-│   ├── errors.ts (all errors go here)
-│   └── index.ts
-└── domain/
-    ├── {page}-page/
-    │   ├── {Page}Page.tsx
-    │   ├── {Component}.tsx (flat - no nested folders)
-    │   ├── {component}.module.css
-    │   ├── {component}_logic.ts (optional - component logic)
-    │   ├── index.ts
-    │   └── interface.ts (optional)
-    └── index.ts
-```
-
-**Key Rules:**
-- Application layer: One file per page named `{page}_page.api.ts`
-- Domain layer: NO schema files required (unlike data-service)
-- Domain layer: MUST have `index.ts` with page logic functions
-- Domain layer: Optional `interface.ts` for additional interfaces
-- Errors: ALL errors go in `application/errors.ts`
-- Pages are domains: `login-page/`, `upload-page/`, `viewer-page/`, `dashboard-page/`, `not-found-page/`
-- Components are sub-domains within pages (NOT in separate components folder)
-
-**Example - FLAT STRUCTURE (No Nested Component Folders):**
-```
-page-service/
-├── application/
-│   ├── login/
-│   │   ├── login_page.api.ts
-│   │   └── index.ts
-│   ├── upload/
-│   │   ├── upload_page.api.ts
-│   │   └── index.ts
-│   ├── errors.ts
-│   └── index.ts
-└── domain/
-    ├── login-page/
-    │   ├── LoginPage.tsx
-    │   ├── LoginForm.tsx
-    │   ├── login_form.module.css
-    │   ├── login_form_logic.ts (optional)
-    │   ├── index.ts
-    │   └── interface.ts (optional)
-    ├── upload-page/
-    │   ├── UploadPage.tsx
-    │   ├── ImageUpload.tsx
-    │   ├── CameraCapture.tsx
-    │   ├── FileUpload.tsx
-    │   ├── UploadProgress.tsx
-    │   ├── image_upload.module.css
-    │   ├── image_upload_logic.ts (optional)
-    │   ├── index.ts
-    │   └── interface.ts (optional)
-    └── index.ts
-```
-
----
-
-### Rule 4: Components as Domains in page-service - FLAT STRUCTURE
-
-**Components are NOT in a separate components/ folder. They are FLAT files within page-service domains.**
-
-**Structure - FLAT (No Nested Folders):**
-- All component files go directly in the page domain folder
-- Component domain contains:
-  - `{Component}.tsx` - Component file (PascalCase)
-  - `{component}.module.css` - Styles (kebab-case)
-  - `{component}_logic.ts` - Optional component logic
-  - `index.ts` - Component logic functions
-  - `interface.ts` - Optional interfaces
-
-**Example - FLAT STRUCTURE:**
-```
-page-service/domain/login-page/
-├── LoginPage.tsx
-├── LoginForm.tsx
-├── login_form.module.css
-├── login_form_logic.ts (optional)
-├── index.ts
-└── interface.ts (optional)
-```
-
-**Key Rules:**
-- ✅ NO separate `components/` folder in src/
-- ✅ Components are FLAT files in page domain folder
-- ✅ NO nested component folders
-- ✅ Each component file is isolated from other components
-- ✅ Component domains can call data-service domains to fetch data
-- ❌ NO nested folders like `login-form/`, `image-upload/`
-- ❌ NO separate `components/` folder in src/
-- Component domains can call data-service domains to fetch data
-- NO schema files for components (unlike data-service domains)
-
----
-
-### Rule 5: Pages as Domains in page-service
-
-**Pages are NOT in a separate pages/ folder. They are domains within page-service with FLAT component files.**
-
-**Structure - FLAT (No Nested Component Folders):**
-- Each page is a domain folder within page-service/domain/
-- Page domain contains:
-  - `{Page}Page.tsx` - Page component (PascalCase)
-  - Component files FLAT (no nested folders)
-  - `index.ts` - Page logic functions
-  - `interface.ts` - Optional interfaces
-
-**Example - FLAT STRUCTURE:**
-```
-page-service/domain/
-├── login-page/
-│   ├── LoginPage.tsx
-│   ├── LoginForm.tsx
-│   ├── login_form.module.css
-│   ├── login_form_logic.ts (optional)
-│   ├── index.ts
-│   └── interface.ts (optional)
-├── upload-page/
-│   ├── UploadPage.tsx
-│   ├── ImageUpload.tsx
-│   ├── CameraCapture.tsx
-│   ├── FileUpload.tsx
-│   ├── UploadProgress.tsx
-│   ├── image_upload.module.css
-│   ├── image_upload_logic.ts (optional)
-│   ├── index.ts
-│   └── interface.ts (optional)
-└── index.ts
-```
-
-**Key Rules:**
-- ✅ NO separate `pages/` folder in src/
-- ✅ Pages are domains within page-service/domain/
-- ✅ Component files are FLAT in page domain (no nested folders)
-- ✅ Each page domain contains its component files
-- ✅ Page domains can call data-service domains to fetch data
-- ❌ NO nested component folders
-- ❌ NO separate `pages/` folder in src/
-- ❌ NO separate `components/` folder in src/
-- ❌ NO schema files for pages (unlike data-service domains)
-
----
-
-### Rule 6: NO Common/Helper Files
-
-**Forbidden Files:**
-- `helpers.ts`, `utils.ts`, `manager.ts`, `common.ts`
-- `common/` folder
-- Any generic catch-all files
-
-**Every file must have a specific, well-defined purpose.**
-
-**Correct Pattern:**
-- `email_validator.ts` - Email validation logic
-- `date_formatter.ts` - Date formatting logic
-- `api_constants.ts` - API constants
-- `auth_error.ts` - Auth error definitions
-
-**Why:** Prevents code from becoming a dumping ground. Clear code ownership and responsibility.
-
----
-
-### Rule 7: Outside src/ Directory Organization
-
-**These folders MUST be outside src/ (at root level or in configs/):**
-
-```
-root/
-├── validators/
-│   ├── email_validator.ts
-│   ├── image_validator.ts
-│   └── dimension_validator.ts
-├── formatters/
-│   ├── date_formatter.ts
-│   ├── image_formatter.ts
-│   └── dimension_formatter.ts
-├── constants/
-│   ├── api_constants.ts
-│   ├── validation_constants.ts
-│   └── ui_constants.ts
-├── hooks/ (frontend only)
-│   ├── use_auth.ts
-│   ├── use_image_upload.ts
-│   └── use_camera.ts
-├── store/ (frontend only)
-│   ├── slices/
-│   │   ├── auth_slice.ts
-│   │   ├── upload_slice.ts
-│   │   └── viewer_slice.ts
-│   ├── store.ts
-│   └── hooks.ts
-├── types/
-│   ├── index.ts
-│   ├── api.ts
-│   └── models.ts
-├── styles/ (frontend only)
-│   ├── globals.css
-│   ├── variables.css
-│   └── reset.css
-├── logger/ (backend only)
-│   ├── request_logger.ts
-│   ├── error_logger.ts
-│   └── performance_logger.ts
-├── configs/
-│   ├── development/
-│   ├── production/
-│   └── global_config.json
-├── scripts/
-│   ├── setup.ts
-│   └── build.ts
-├── schema/
-│   ├── user_schema.json
-│   ├── image_schema.json
-│   └── visualization_schema.json
-├── public/
-│   ├── images/
-│   ├── icons/
-│   └── favicon.ico
-└── src/
-    ├── data-service/
-    ├── page-service/
-    └── App.tsx
-```
-
-**Key Rules:**
-- All feature-specific utilities organized by type
-- Each file has a specific purpose: `{feature}_{type}.ts`
-- Validators, formatters, constants, errors, loggers are feature-specific
-- No generic files allowed
-
----
-
-### Rule 8: File Naming Conventions
-
-**Folders:**
-- Kebab-case for all folder names
-- Examples: `data-service`, `page-service`, `auth`, `image-upload`, `login-form`
-
-**Frontend Files:**
-- Components: `PascalCase.tsx` (e.g., `LoginForm.tsx`, `ImageUpload.tsx`)
-- Hooks: `use_xxx.ts` (e.g., `use_auth.ts`, `use_image_upload.ts`)
-- API files: `{feature}.api.ts` (e.g., `login.api.ts`, `upload_image.api.ts`)
-- Schema files: `{domain}_schema.ts` (e.g., `auth_schema.ts`, `image_schema.ts`)
-- Interface files: `interface.ts`
-- Domain logic: `index.ts`
-- Styles: `*.module.css` (e.g., `login_form.module.css`)
-- Tests: `*.test.tsx` or `*.spec.tsx`
-- Redux slices: `{feature}_slice.ts` (e.g., `auth_slice.ts`)
-- Validators: `{feature}_validator.ts` (e.g., `email_validator.ts`)
-- Formatters: `{feature}_formatter.ts` (e.g., `date_formatter.ts`)
-- Constants: `{feature}_constants.ts` (e.g., `api_constants.ts`)
-- Errors: `{feature}_error.ts` (e.g., `auth_error.ts`)
-
-**Backend Files:**
-- Controllers: `{feature}_controller.ts` (e.g., `auth_controller.ts`)
-- Services: `{feature}_service.ts` (e.g., `image_service.ts`)
-- Models: `PascalCase.ts` (e.g., `User.ts`, `Session.ts`)
-- Routes: `{feature}.ts` (e.g., `auth.ts`, `images.ts`)
-- Middleware: `{feature}.ts` (e.g., `auth.ts`, `error_handler.ts`)
-- Schema files: `{domain}_schema.ts` (e.g., `auth_schema.ts`)
-- Interface files: `interface.ts`
-- Domain logic: `index.ts`
-- Validators: `{feature}_validator.ts` (e.g., `email_validator.ts`)
-- Formatters: `{feature}_formatter.ts` (e.g., `date_formatter.ts`)
-- Constants: `{feature}_constants.ts` (e.g., `api_constants.ts`)
-- Errors: `{feature}_error.ts` (e.g., `auth_error.ts`)
-- Loggers: `{feature}_logger.ts` (e.g., `request_logger.ts`)
-- Tests: `*.test.ts` or `*.spec.ts`
-
-**Functions & Variables:**
-- camelCase for functions and variables
-- PascalCase for components and classes
-- UPPER_SNAKE_CASE for constants
-
----
-
-### Rule 9: Error Handling Location
-
-**Frontend:**
-- data-service errors: `data-service/application/errors.ts`
-- page-service errors: `page-service/application/errors.ts`
-- NO separate errors folder in src/
-
-**Backend:**
-- data-service errors: `data-service/application/errors.ts`
-- page-service errors: `page-service/application/errors.ts`
-- NO separate errors folder in src/
-
-**Error File Structure:**
-```typescript
-// data-service/application/errors.ts
-export class AuthError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'AuthError';
-  }
-}
-
-export class ImageUploadError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'ImageUploadError';
-  }
-}
-
-export class ValidationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'ValidationError';
-  }
-}
-```
-
-**Key Rules:**
-- All errors for a service go in `application/errors.ts`
-- One error class per error type
-- Error classes extend Error
-- Named descriptively: `{Feature}Error`
-
----
-
-### Rule 10: Import Rules
-
-**Allowed Imports:**
-```typescript
-// ✅ Own domain logic
-import { validateUserCredentials } from '../domain/auth/index';
-
-// ✅ Own application types
-import { ILoginApiRequest, ILoginApiResponse } from './login.api';
-
-// ✅ Validators, formatters, errors (feature-specific)
-import { validateEmail } from '@validators/email_validator';
-import { formatDate } from '@formatters/date_formatter';
-import { AuthError } from '@data-service/application/errors';
-
-// ✅ From other service (only in page-service)
-import { loginApi } from '@data-service/application/auth';
-
-// ✅ From data-service domain (only in page-service)
-import { validateUserCredentials } from '@data-service/domain/auth';
-```
-
-**Forbidden Imports:**
-```typescript
-// ❌ Domain types in application layer
-import { IUser, IAuthToken } from '../domain/auth/auth_schema';
-
-// ❌ Cross-domain in same service
-import { validateImageFile } from '../image/index';
-
-// ❌ Direct imports between services (except page-service calling data-service)
-import { authDomain } from '@data-service/domain/auth';
-
-// ❌ Generic utility files
-import { helpers } from '@utils/helpers';
-import { manager } from '@utils/manager';
-
-// ❌ Circular imports
-```
-
----
-
-### Rule 11: Type Definition Strategy
-
-**Domain Types (Internal Business Models):**
-- Defined in `{domain}_schema.ts` in domain layer
-- Examples: `IUser`, `IAuthToken`, `IImage`
-- Used internally by domain logic functions
-- NOT imported into application layer
-
-**Application Types (API Contracts):**
-- Defined in `{feature}.api.ts` in application layer
-- Examples: `ILoginApiRequest`, `ILoginApiResponse`
-- Used for API request/response handling
-- NOT imported into domain layer
-
-**Key Principle:**
-- Never import domain types into application layer
-- Application layer can call domain functions but should not depend on domain types
-- Each layer owns its type definitions
-
-**Example:**
-```typescript
-// ✅ CORRECT - Separate types for each layer
-// data-service/domain/auth/auth_schema.ts
-export interface IUser {
-  id: string;
-  email: string;
-  passwordHash: string;
-}
-
-// data-service/application/auth/login.api.ts
-export interface ILoginApiRequest {
-  email: string;
-  password: string;
-}
-
-export interface ILoginApiResponse {
-  success: boolean;
-  token: string;
-  userId: string;
-}
-
-// ❌ INCORRECT - Importing domain types to application
-import { IUser } from '../domain/auth/auth_schema';
-export const handleLogin = (user: IUser): void => { };
-```
-
----
-
-### Rule 12: Function Parameter Rules
-
-**For 1-3 parameters:** Use individual parameters
-```typescript
-// ✅ CORRECT
-export const validateUser = (email: string, password: string, userId: string): boolean => {
-  return !!email && !!password && !!userId;
-};
-```
-
-**For 4+ parameters:** Use destructured object only
-```typescript
-// ✅ CORRECT
-export const createUser = ({ email, password, firstName, lastName, role }: {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-}): IUser => {
-  return { email, password, firstName, lastName, role };
-};
-```
-
-**External API requests/responses:** Always use defined type objects
-```typescript
-// ✅ CORRECT
-export interface ILoginApiRequest {
-  email: string;
-  password: string;
-}
-
-export const loginApi = async (request: ILoginApiRequest): Promise<ILoginApiResponse> => {
-  const response = await api.post('/api/auth/login', request);
-  return response.data;
-};
-```
-
-**Forbidden:**
-```typescript
-// ❌ INCORRECT - Unnecessary wrapper object for 2 parameters
-export const validateUser = (params: { email: string; password: string }): boolean => {
-  return !!params.email && !!params.password;
-};
-```
-
----
-
-### Rule 13: TypeScript Types-Only Approach
-
-**Use TypeScript types and interfaces only - NO classes for domain models:**
-
-```typescript
-// ✅ CORRECT - Types only
-export type UserRole = 'admin' | 'user' | 'guest';
-export interface IUser {
-  id: string;
-  email: string;
-  role: UserRole;
-}
-
-export type AuthStatus = 'authenticated' | 'unauthenticated' | 'expired';
-
-// ❌ INCORRECT - Classes not allowed for domain models
-export class User {
-  id: string;
-  email: string;
-  role: UserRole;
-}
-
-export class AuthStatus {
-  status: 'authenticated' | 'unauthenticated' | 'expired';
-}
-```
-
-**Exception:** Error classes are allowed
-```typescript
-// ✅ CORRECT - Error classes are allowed
-export class AuthError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'AuthError';
-  }
-}
-```
-
----
-
-### Rule 14: Summary Checklist for Creating New Features/Pages
-
-**When creating a new feature or page, use this checklist:**
-
-**For data-service domains:**
-- [ ] Create domain folder in `data-service/domain/{domain}/`
-- [ ] Create `{domain}_schema.ts` with type definitions (REQUIRED)
-- [ ] Create `index.ts` with domain logic functions
-- [ ] Create `interface.ts` if additional interfaces needed (optional)
-- [ ] Create API file in `data-service/application/{feature}/{feature}.api.ts`
-- [ ] Add error classes to `data-service/application/errors.ts`
-- [ ] Export domain from `data-service/domain/index.ts`
-- [ ] Export API from `data-service/application/index.ts`
-
-**For page-service pages:**
-- [ ] Create page domain folder in `page-service/domain/{page}-page/`
-- [ ] Create `{Page}Page.tsx` component
-- [ ] Create `index.ts` with page logic functions
-- [ ] Create `interface.ts` if additional interfaces needed (optional)
-- [ ] Create sub-component domains within page domain (NO separate components folder)
-- [ ] Create API file in `page-service/application/{page}/{page}_page.api.ts`
-- [ ] Add error classes to `page-service/application/errors.ts`
-- [ ] Export page domain from `page-service/domain/index.ts`
-- [ ] Export API from `page-service/application/index.ts`
-
-**For page-service components (sub-domains):**
-- [ ] Create component folder within page domain: `page-service/domain/{page}-page/{component}/`
-- [ ] Create `{Component}.tsx` component file
-- [ ] Create `{component}.module.css` styles file
-- [ ] Create `index.ts` with component logic functions
-- [ ] Create `interface.ts` if additional interfaces needed (optional)
-- [ ] NO schema files for components
-
-**For utilities outside src/:**
-- [ ] Create feature-specific file: `{feature}_{type}.ts`
-- [ ] Examples: `email_validator.ts`, `date_formatter.ts`, `api_constants.ts`
-- [ ] Place in appropriate folder: `validators/`, `formatters/`, `constants/`, etc.
-- [ ] NO generic `helpers.ts` or `utils.ts` files
-
----
-
-### Rule 15: File Organization Principles
-
-**Every file must have a specific, well-defined purpose:**
-
-**Principle 1: Feature-Specific Organization**
-- All utilities are organized by feature
-- Example: `email_validator.ts` (not `validators.ts`)
-- Example: `date_formatter.ts` (not `formatters.ts`)
-
-**Principle 2: Clear Code Ownership**
-- Each file has clear responsibility
-- Easy to locate related functionality
-- Prevents code from becoming a dumping ground
-
-**Principle 3: No Generic Files**
-- NO `helpers.ts`, `utils.ts`, `manager.ts`
-- NO `common/` folder
-- Every file has specific purpose
-
-**Principle 4: Organized by Type**
-- Validators grouped in `validators/` folder
-- Formatters grouped in `formatters/` folder
-- Constants grouped in `constants/` folder
-- Errors grouped in `errors/` folder (in application layer)
-- Loggers grouped in `logger/` folder
-
-**Benefits:**
-- Clear code ownership and responsibility
-- Easy to locate related functionality
-- Prevents code from becoming a dumping ground
-- Encourages focused, single-purpose modules
-- Simplifies testing and maintenance
-- Reduces cognitive load when navigating codebase
-
----
-
-## Notes
-
-- This is a template structure - customize as needed
-- Keep folder structure consistent across the project
-- Follow naming conventions strictly for maintainability
-- Use TypeScript types only - no classes for domain models
-- Write tests alongside code
-- Document complex logic with comments
-- Keep files focused on single responsibility
-- Schema files are the single source of truth for type definitions
+## Glossary
+
+- **DDD**: Domain-Driven Design
+- **JWT**: JSON Web Token
+- **OTP**: One-Time Password
+- **GCP**: Google Cloud Platform
+- **TTL**: Time To Live
+- **CSRF**: Cross-Site Request Forgery
+- **CORS**: Cross-Origin Resource Sharing
+- **HMR**: Hot Module Replacement
+- **E2E**: End-to-End
+- **CI/CD**: Continuous Integration/Continuous Deployment
