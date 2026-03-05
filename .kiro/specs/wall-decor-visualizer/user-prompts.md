@@ -227,42 +227,35 @@ Micro-interactions on all interactive elements
 
 
 
+## Query 115
+**Timestamp**: 2026-03-06
+**User Message**: push all changes
+
+## Query 116
+**Timestamp**: 2026-03-06
+**User Message**: raise MR for master
 
 
+## Query 150
+**Timestamp**: 2026-03-06
+**User Message**: squash all changes in ila/implementation2
 
 
-
-## Query 129
-**Timestamp**: 2026-03-05
-**User Message**: add all task in feature_task.md
-
-
-## Query 130
-**Timestamp**: 2026-03-05
-**User Message**: there was a prohibition to create anu other folder than data-service and page-service but you created another folder-- why ?
-
-## Query 131
-**Timestamp**: 2026-03-05
-**User Message**: check you didnt create it ? because no one els wrote code here
-
-## Query 132
-**Timestamp**: 2026-03-05
-**User Message**: cann you check in backend folder what is not right as per DDD rules
-
-## Query 133
-**Timestamp**: 2026-03-05
-**User Message**: fix
-
-## Query 134
-**Timestamp**: 2026-03-05
-**User Message**: continue
+## Query 151
+**Timestamp**: 2026-03-06
+**User Message**: raise mr
 
 
-## Query 135
-**Timestamp**: 2026-03-05
-**User Message**: after login page is showing only loading... nothin happens page reamins black
+## Query 152
+**Timestamp**: 2026-03-06
+**User Message**: lets create a folder requirements.docs and put requirements.md file in that folder
 
 
-## Query 136
-**Timestamp**: 2026-03-05
-**User Message**: stuck here - nothing happened
+## Query 153
+**Timestamp**: 2026-03-06
+**User Message**: create  two files by copy pasting from requireemnt.md login.requirement.md and upload.requirement.md
+
+
+## Query 154
+**Timestamp**: 2026-03-06
+**User Message**: git push -m"created divided requirements"
