@@ -44,7 +44,7 @@ Implementing the image upload feature that appears after user login. Users can u
 ## Task 9: Deploy and Test Feature
 - [x] Manual testing of upload flow
 - [x] Verify integration with login page
-- [ ] Test logout functionality
+- [x] Test logout functionality
 
 ## Task 10: Raise MR for Review
 - [ ] Prepare MR with all changes

@@ -25,10 +25,19 @@ export default defineConfig({
     strictPort: false,
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: process.env.NODE_ENV === 'production' 
+          ? 'https://wall-decor-visualizer-backend.onrender.com'
+          : 'http://localhost:3000',
         changeOrigin: true,
-        secure: false,
+        secure: true,
       }
     }
+  },
+  define: {
+    'process.env.VITE_API_URL': JSON.stringify(
+      process.env.NODE_ENV === 'production'
+        ? 'https://wall-decor-visualizer-backend.onrender.com'
+        : 'http://localhost:3000'
+    )
   }
 })

@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: wall-decor-visualizer-backend
+    env: node
+    plan: free
+    rootDir: wall-decor-visualizer/backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        fromDatabase:
+          name: wall-decor-visualizer-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_EXPIRY
+        value: "3600"
+      - key: JWT_REFRESH_EXPIRY
+        value: "604800"
+      - key: GCP_PROJECT_ID
+        value: no-dev-853
+      - key: GCP_BUCKET_NAME
+        value: wall-decor-visualizer-images
+      - key: GCP_SERVICE_ACCOUNT_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: CORS_ORIGIN
+        value: https://wall-decor-visualizer.vercel.app
+      - key: CORS_CREDENTIALS
+        value: "true"

@@ -44,92 +44,29 @@ The Wall Decor Visualizer is a feature that enables users to transform 2D images
 
 ### Requirement 0: User Authentication and Login (Phone Number + OTP)
 
-**User Story:** As a user, I want to log in to the web application using my phone number and OTP, so that I can access the wall visualization tool securely.
-
-#### Acceptance Criteria
-
-1. WHEN a user navigates to the web URL, THE Authentication_System SHALL check if a valid session token exists in local storage or cookies
-2. IF a valid session token exists, THE Authentication_System SHALL automatically log the user in and redirect to the main application
-3. IF no valid session token exists, THE Authentication_System SHALL display a login page with a phone number field
-4. WHEN the user enters their phone number and clicks "Send OTP", THE Authentication_System SHALL send the phone number to the Backend_Server via the /api/auth/send-otp API_Endpoint
-5. WHEN the Backend_Server receives a phone number, THE User_Authentication_Handler SHALL validate the phone number format
-6. IF the phone number format is invalid, THEN THE Authentication_System SHALL display an error message and allow the user to retry
-7. WHEN the phone number is valid, THE User_Authentication_Handler SHALL generate a fixed OTP (2213) and store it temporarily with a 10-minute expiration
-8. WHEN the OTP is generated, THE Backend_Server SHALL return a success response to the client
-9. WHEN the success response is received, THE Authentication_System SHALL display an OTP input field for the user to enter the 4-digit code
-10. WHEN the user enters the OTP and clicks "Verify", THE Authentication_System SHALL send the OTP to the Backend_Server via the /api/auth/verify-otp API_Endpoint
-11. WHEN the Backend_Server receives the OTP, THE User_Authentication_Handler SHALL validate the OTP against the stored value
-12. IF the OTP is invalid or expired, THEN THE Authentication_System SHALL display an error message and allow the user to retry or request a new OTP
-13. WHEN the OTP is valid, THE User_Authentication_Handler SHALL generate a Session_Token with an expiration time
-14. WHEN a Session_Token is generated, THE Backend_Server SHALL return the token to the client
-15. WHEN the Session_Token is received, THE Authentication_System SHALL store it in local storage and/or secure HTTP-only cookies
-16. WHEN the Session_Token is stored, THE Authentication_System SHALL redirect the user to the main application dashboard
-
----
-
-### Requirement 0.5: Session Persistence and Token Management
-
-**User Story:** As a user, I want my login session to persist across browser sessions, so that I don't have to log in every time I visit the application.
-
-#### Acceptance Criteria
-
-1. WHEN a user logs in, THE Session_Persistence_Manager SHALL store the Session_Token in secure HTTP-only cookies with a long expiration time (e.g., 30 days)
-2. WHEN a user closes and reopens the browser, THE Session_Persistence_Manager SHALL check for a valid Session_Token in cookies
-3. IF a valid Session_Token exists, THE Session_Persistence_Manager SHALL automatically authenticate the user without requiring login
-4. WHEN a Session_Token is about to expire, THE Session_Persistence_Manager SHALL attempt to refresh the token automatically
-5. WHEN a Session_Token is refreshed, THE Backend_Server SHALL issue a new token with an updated expiration time
-6. IF a Session_Token refresh fails, THEN THE Session_Persistence_Manager SHALL redirect the user to the login page
-7. WHEN a user clicks "Logout", THE Session_Persistence_Manager SHALL delete the Session_Token from storage and cookies
-8. WHEN the Session_Token is deleted, THE Authentication_System SHALL redirect the user to the login page
-9. WHEN a Session_Token expires, THE Authentication_System SHALL automatically log the user out and redirect to the login page
-10. WHEN the user is logged out, THE Authentication_System SHALL display a message indicating the session has expired
+login.requirements.md
+linking: defaul page to open if user not logged in
 
 ---
 
 ### Requirement 1: Image Upload and Backend Storage
 
-**User Story:** As a user, I want to upload an image of a wall to the backend server, so that it can be stored securely and used for generating a 3D model.
+upload.requirement.md
+linking: if logged in , this is the landing page
+site wide global header is there which shows logout button
+---
 
-#### Acceptance Criteria
+### Requirement 2: Mark dimension on uploaded Imaged
 
-1. WHEN the user clicks on the image upload area, THE Image_Uploader SHALL display two options: "Capture from Camera" and "Upload from Camera Roll"
-2. WHEN the user selects "Upload from Camera Roll", THE Image_Uploader SHALL open a file browser dialog
-3. WHEN the user selects an image file from the file browser, THE Image_Uploader SHALL accept image formats (JPEG, PNG, WebP)
-4. WHEN the user selects "Capture from Camera", THE Image_Uploader SHALL request camera permissions and open the device camera view
-5. WHEN the camera view is open, THE Camera_Capture_Handler SHALL display a live camera feed with capture button
-6. WHEN the user clicks the capture button, THE Camera_Capture_Handler SHALL capture the image from the camera feed
-7. WHEN an image is captured or selected, THE Image_Uploader SHALL send the image to the Backend_Server via the /api/images/upload API_Endpoint
-8. WHEN the Backend_Server receives an image, THE Image_Storage_Service SHALL validate the file format and size
-9. IF the file format is unsupported or size exceeds limits, THEN THE Image_Storage_Service SHALL return an error response with a descriptive message
-10. WHEN an image is validated, THE Image_Storage_Service SHALL upload the image to the GCP_Bucket in GCP Cloud Storage
-11. WHEN the image is uploaded to GCP, THE Image_Storage_Service SHALL generate a unique image_id and store the GCP object reference
-12. WHEN an image_id is received, THE Image_Display SHALL retrieve the image from GCP_Bucket using the image_id
-13. WHEN an image is retrieved from GCP, THE Image_Display SHALL render the image at full resolution within the editor viewport
-14. WHEN an image is displayed, THE Image_Display SHALL maintain the original aspect ratio
-15. IF the image retrieval from GCP fails, THEN THE Image_Display SHALL display an error message with a retry option
+dimension_mark.requirements.md
+linking: after image is uploaded this page opens up
+site wide global header is there which shows logout button
+
 
 ---
 
-### Requirement 1.5: Camera Capture Functionality
 
-**User Story:** As a user, I want to capture images directly from my device camera, so that I can quickly photograph a wall without needing to upload from my camera roll.
 
-#### Acceptance Criteria
-
-1. WHEN the user selects "Capture from Camera", THE Camera_Capture_Handler SHALL request camera permissions from the device
-2. IF camera permissions are denied, THEN THE Camera_Capture_Handler SHALL display an error message explaining why camera access is needed
-3. IF the device does not have a camera available, THEN THE Camera_Capture_Handler SHALL display an error message "Camera not available" and prevent camera access
-4. IF the camera hardware is in use by another application, THEN THE Camera_Capture_Handler SHALL display an error message "Camera is currently in use" and provide a retry option
-5. WHEN permissions are granted, THE Camera_Capture_Handler SHALL open a full-screen camera view with a live feed
-6. WHEN the camera view is open, THE Camera_Capture_Handler SHALL display a prominent capture button in the center or bottom of the screen
-7. WHEN the camera view is open, THE Camera_Capture_Handler SHALL display a cancel button to close the camera without capturing
-8. WHEN the user clicks the capture button, THE Camera_Capture_Handler SHALL capture a high-resolution image from the camera feed
-9. WHEN an image is captured, THE Camera_Capture_Handler SHALL display a preview of the captured image with options to "Confirm" or "Retake"
-10. WHEN the user clicks "Confirm", THE Camera_Capture_Handler SHALL proceed with uploading the image to the backend
-11. WHEN the user clicks "Retake", THE Camera_Capture_Handler SHALL return to the camera view for another capture attempt
-12. WHEN the user clicks "Cancel" at any point, THE Camera_Capture_Handler SHALL close the camera view and return to the upload options
-
----
 
 **User Story:** As a user, I want to mark dimensions on the wall image, so that the system can understand the scale and proportions of the wall.
 

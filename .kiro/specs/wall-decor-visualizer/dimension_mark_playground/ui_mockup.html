@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dimension Marking Tool - UI Mockup</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', sans-serif;
+            background: #f5f5f5;
+            overflow: hidden;
+        }
+
+        .dimension-marking-page {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: #ffffff;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background: #ffffff;
+            border-bottom: 1px solid #e0e0e0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .header-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #45a049;
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .btn-secondary:hover {
+            background: #e8e8e8;
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* ===== CANVAS AREA ===== */
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f9f9f9;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .image-canvas {
+            max-width: 90%;
+            max-height: 90%;
+            background: white;
+            border: 2px solid #ddd;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: relative;
+            cursor: grab;
+        }
+
+        .image-canvas.panning {
+            cursor: grabbing;
+        }
+
+        .image-canvas img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* ===== ZOOM CONTROLS ===== */
+        .zoom-controls {
+            position: absolute;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 0.5rem;
+        }
+
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: #f0f0f0;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .zoom-btn:hover {
+            background: #e0e0e0;
+        }
+
+        .zoom-display {
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #333;
+            padding: 0.25rem 0.5rem;
+            min-width: 50px;
+        }
+
+        /* ===== FLOATING TOOLBAR ===== */
+        .floating-toolbar {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            padding: 0.75rem;
+            cursor: move;
+            z-index: 100;
+            user-select: none;
+            min-width: 280px;
+        }
+
+        .toolbar-header {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e0e0e0;
+            cursor: grab;
+        }
+
+        .toolbar-header:active {
+            cursor: grabbing;
+        }
+
+        .toolbar-tools {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .tool-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 0.75rem;
+            border: 2px solid transparent;
+            background: #f9f9f9;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #333;
+            transition: all 0.2s ease;
+        }
+
+        .tool-btn:hover {
+            background: #f0f0f0;
+            border-color: #ddd;
+        }
+
+        .tool-btn.active {
+            background: #e3f2fd;
+            border-color: #2196F3;
+            color: #1976D2;
+        }
+
+        .tool-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .tool-label {
+            flex: 1;
+            text-align: left;
+        }
+
+        /* ===== ARCH TYPE SELECTOR ===== */
+        .arch-selector {
+            display: none;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .arch-selector.visible {
+            display: flex;
+        }
+
+        .arch-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f9f9f9;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        .arch-option:hover {
+            background: #f0f0f0;
+            border-color: #999;
+        }
+
+        .arch-option.selected {
+            background: #e3f2fd;
+            border-color: #2196F3;
+        }
+
+        .arch-option input[type="radio"] {
+            cursor: pointer;
+        }
+
+        /* ===== UNDO/REDO CONTROLS ===== */
+        .undo-redo-controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .undo-redo-btn {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            background: #f9f9f9;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .undo-redo-btn:hover:not(:disabled) {
+            background: #f0f0f0;
+            border-color: #999;
+        }
+
+        .undo-redo-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* ===== ANNOTATION EXAMPLES ===== */
+        .annotation-example {
+            position: absolute;
+            pointer-events: none;
+        }
+
+        /* Polygon example */
+        .polygon-example {
+            stroke: #FF0000;
+            stroke-width: 2;
+            fill: rgba(255, 0, 0, 0.2);
+        }
+
+        .polygon-vertex {
+            fill: #FF0000;
+            r: 5;
+        }
+
+        /* Dimension line example */
+        .dimension-line {
+            stroke: #000000;
+            stroke-width: 2;
+        }
+
+        .dimension-arrow {
+            fill: none;
+            stroke: #000000;
+            stroke-width: 2;
+        }
+
+        /* Freehand example */
+        .freehand-line {
+            stroke: #000000;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* Corner marker example */
+        .corner-dot {
+            fill: #0000FF;
+            r: 4;
+        }
+
+        .corner-stroke {
+            stroke: #000000;
+            stroke-width: 4;
+            fill: none;
+            stroke-linecap: round;
+        }
+
+        /* Arch example */
+        .arch-curve {
+            stroke: #000000;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        .arch-radius {
+            stroke: #000000;
+            stroke-width: 1;
+            stroke-dasharray: 4, 4;
+            fill: none;
+        }
+
+        /* ===== LEGEND ===== */
+        .legend {
+            position: absolute;
+            bottom: 2rem;
+            left: 2rem;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 1rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            font-size: 0.85rem;
+            max-width: 250px;
+        }
+
+        .legend-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 2px;
+            border: 1px solid #ddd;
+        }
+
+        .legend-item:last-child {
+            margin-bottom: 0;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .header {
+                padding: 0.75rem 1rem;
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
+
+            .header-title {
+                font-size: 1rem;
+            }
+
+            .floating-toolbar {
+                top: 1rem;
+                left: 1rem;
+                min-width: 240px;
+            }
+
+            .zoom-controls {
+                bottom: 1rem;
+                right: 1rem;
+            }
+
+            .legend {
+                bottom: 1rem;
+                left: 1rem;
+                max-width: 200px;
+            }
+        }
+
+        /* ===== DEMO ANNOTATIONS ===== */
+        .demo-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="dimension-marking-page">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-title">Dimension Marking Tool</div>
+            <div class="header-actions">
+                <button class="btn btn-secondary">Skip</button>
+                <button class="btn btn-primary">Save Dimensions</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Canvas Area -->
+            <div class="canvas-container">
+                <div class="canvas-wrapper">
+                    <!-- Image Canvas -->
+                    <div class="image-canvas">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400'%3E%3Crect fill='%23f0f0f0' width='600' height='400'/%3E%3Ctext x='50%25' y='50%25' font-size='24' fill='%23999' text-anchor='middle' dominant-baseline='middle'%3EWall Image Preview%3C/text%3E%3C/svg%3E" alt="Wall Image">
+                        
+                        <!-- Demo Annotations SVG -->
+                        <svg class="demo-svg" viewBox="0 0 600 400">
+                            <!-- Polygon Example -->
+                            <polygon class="polygon-example" points="100,80 180,60 200,150 120,180"/>
+                            <circle class="polygon-vertex" cx="100" cy="80"/>
+                            <circle class="polygon-vertex" cx="180" cy="60"/>
+                            <circle class="polygon-vertex" cx="200" cy="150"/>
+                            <circle class="polygon-vertex" cx="120" cy="180"/>
+
+                            <!-- Dimension Line Example -->
+                            <line class="dimension-line" x1="280" y1="100" x2="380" y2="100"/>
+                            <!-- Arrowheads for dimension line -->
+                            <polygon class="dimension-arrow" points="280,100 275,95 275,105"/>
+                            <polygon class="dimension-arrow" points="380,100 385,95 385,105"/>
+
+                            <!-- Freehand Line Example -->
+                            <path class="freehand-line" d="M 320 200 Q 330 210 340 205 T 360 210"/>
+
+                            <!-- Concave Corner Example -->
+                            <line class="corner-stroke" x1="450" y1="150" x2="450" y2="180"/>
+                            <line class="corner-stroke" x1="450" y1="150" x2="420" y2="150"/>
+                            <circle class="corner-dot" cx="450" cy="150"/>
+
+                            <!-- Convex Corner Example -->
+                            <line class="corner-stroke" x1="500" y1="250" x2="500" y2="220"/>
+                            <line class="corner-stroke" x1="500" y1="250" x2="530" y2="250"/>
+                            <circle class="corner-dot" cx="500" cy="250"/>
+
+                            <!-- Arch Example (180°) -->
+                            <path class="arch-curve" d="M 150 300 A 50 50 0 0 1 250 300"/>
+                            <line class="arch-radius" x1="200" y1="300" x2="200" y2="250"/>
+
+                            <!-- Arch Example (90°) -->
+                            <path class="arch-curve" d="M 350 320 A 40 40 0 0 1 390 280"/>
+                            <line class="arch-radius" x1="350" y1="320" x2="350" y2="280"/>
+                            <line class="arch-radius" x1="350" y1="320" x2="390" y2="320"/>
+                        </svg>
+                    </div>
+
+                    <!-- Zoom Controls -->
+                    <div class="zoom-controls">
+                        <button class="zoom-btn" title="Zoom In">+</button>
+                        <div class="zoom-display">100%</div>
+                        <button class="zoom-btn" title="Zoom Out">−</button>
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="legend">
+                        <div class="legend-title">Annotation Colors</div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #FF0000;"></div>
+                            <span>Polygon</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #000000;"></div>
+                            <span>Dimension/Freehand</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #0000FF;"></div>
+                            <span>Corner Markers</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Floating Toolbar -->
+        <div class="floating-toolbar">
+            <div class="toolbar-header">📐 Marking Tools</div>
+            <div class="toolbar-tools">
+                <button class="tool-btn">
+                    <span class="tool-icon">⬠</span>
+                    <span class="tool-label">Polygon</span>
+                </button>
+                <button class="tool-btn">
+                    <span class="tool-icon">↔</span>
+                    <span class="tool-label">Dimension</span>
+                </button>
+                <button class="tool-btn">
+                    <span class="tool-icon">✏️</span>
+                    <span class="tool-label">Freehand</span>
+                </button>
+                <button class="tool-btn">
+                    <span class="tool-icon">⌢</span>
+                    <span class="tool-label">Arch</span>
+                </button>
+                <button class="tool-btn">
+                    <span class="tool-icon">⌐</span>
+                    <span class="tool-label">Concave Corner</span>
+                </button>
+                <button class="tool-btn">
+                    <span class="tool-icon">⌞</span>
+                    <span class="tool-label">Convex Corner</span>
+                </button>
+                <button class="tool-btn active">
+                    <span class="tool-icon">✋</span>
+                    <span class="tool-label">Pan</span>
+                </button>
+
+                <!-- Arch Type Selector (hidden by default) -->
+                <div class="arch-selector">
+                    <label class="arch-option selected">
+                        <input type="radio" name="arch-type" value="180" checked>
+                        <span>180° Arch</span>
+                    </label>
+                    <label class="arch-option">
+                        <input type="radio" name="arch-type" value="90">
+                        <span>90° Arch</span>
+                    </label>
+                </div>
+
+                <!-- Undo/Redo Controls -->
+                <div class="undo-redo-controls">
+                    <button class="undo-redo-btn" title="Undo (Ctrl+Z)">↶ Undo</button>
+                    <button class="undo-redo-btn" title="Redo (Ctrl+Y)">↷ Redo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple demo interactions
+        const toolButtons = document.querySelectorAll('.tool-btn');
+        const archSelector = document.querySelector('.arch-selector');
+        const archToolBtn = Array.from(toolButtons).find(btn => btn.textContent.includes('Arch'));
+
+        toolButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Remove active class from all buttons
+                toolButtons.forEach(b => b.classList.remove('active'));
+                // Add active class to clicked button
+                this.classList.add('active');
+
+                // Show/hide arch selector
+                if (this === archToolBtn) {
+                    archSelector.classList.add('visible');
+                } else {
+                    archSelector.classList.remove('visible');
+                }
+            });
+        });
+
+        // Zoom controls demo
+        const zoomDisplay = document.querySelector('.zoom-display');
+        const zoomInBtn = document.querySelectorAll('.zoom-btn')[0];
+        const zoomOutBtn = document.querySelectorAll('.zoom-btn')[1];
+        let zoomLevel = 100;
+
+        zoomInBtn.addEventListener('click', () => {
+            if (zoomLevel < 500) {
+                zoomLevel += 10;
+                zoomDisplay.textContent = zoomLevel + '%';
+            }
+        });
+
+        zoomOutBtn.addEventListener('click', () => {
+            if (zoomLevel > 10) {
+                zoomLevel -= 10;
+                zoomDisplay.textContent = zoomLevel + '%';
+            }
+        });
+
+        // Toolbar dragging demo
+        const toolbar = document.querySelector('.floating-toolbar');
+        const toolbarHeader = document.querySelector('.toolbar-header');
+        let isDragging = false;
+        let currentX;
+        let currentY;
+        let initialX;
+        let initialY;
+
+        toolbarHeader.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            initialX = e.clientX - toolbar.offsetLeft;
+            initialY = e.clientY - toolbar.offsetTop;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                currentX = e.clientX - initialX;
+                currentY = e.clientY - initialY;
+                toolbar.style.left = currentX + 'px';
+                toolbar.style.top = currentY + 'px';
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+    </script>
+</body>
+</html>

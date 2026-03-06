@@ -11,3 +11,24 @@ export class NetworkError extends Error {
     this.name = 'NetworkError';
   }
 }
+
+export class DimensionMarkError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'DimensionMarkError';
+  }
+}
+
+export class SaveError extends DimensionMarkError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'SaveError';
+  }
+}
+
+export class SkipError extends DimensionMarkError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'SkipError';
+  }
+}
