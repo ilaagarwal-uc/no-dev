@@ -197,6 +197,7 @@ export function DimensionMarkPage({
           onDrawingStart={handleDrawingStart}
           onDrawingEnd={handleDrawingEnd}
           onPreviewUpdate={handlePreviewUpdate}
+          onPanChange={handlePan}
           imageWidth={imageWidth}
           imageHeight={imageHeight}
           archType={state.archType}

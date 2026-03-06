@@ -40,6 +40,7 @@ export interface ICanvasProps {
   onDrawingStart: () => void;
   onDrawingEnd: () => void;
   onPreviewUpdate: (preview: IPreviewData | undefined) => void;
+  onPanChange?: (offset: DimensionMarkDomain.IPoint) => void;
   imageWidth: number;
   imageHeight: number;
   archType?: '180' | '90';

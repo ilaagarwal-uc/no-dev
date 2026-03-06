@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from 'react';
-import * as CanvasLogic from './canvas_logic';
 import * as ToolLogic from './tool_logic';
 import * as DimensionMarkDomain from '../../../data-service/domain/dimension-mark';
 import { getAuthToken } from '../../../data-service/domain/auth';
@@ -18,6 +17,7 @@ export function Canvas({
   onDrawingStart,
   onDrawingEnd,
   onPreviewUpdate,
+  onPanChange,
   imageWidth,
   imageHeight,
   archType
@@ -25,6 +25,10 @@ export function Canvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = React.useState(false);
   const [currentDrawingState, setCurrentDrawingState] = React.useState<any>(null);
+  const [lastTouchDistance, setLastTouchDistance] = React.useState<number | null>(null);
+  const [isDragging, setIsDragging] = React.useState(false);
+  const [dragStart, setDragStart] = React.useState({ x: 0, y: 0 });
+  const [lastPanOffset, setLastPanOffset] = React.useState({ x: 0, y: 0 });
 
   // Set canvas size on mount and window resize
   useEffect(() => {
@@ -126,12 +130,14 @@ export function Canvas({
             drawWidth = drawHeight * imageAspect;
           }
 
-          // Apply zoom and pan transformations
+          // Apply zoom and pan transformations in correct order
+          // 1. First translate to center of canvas
           ctx.translate(canvas.width / 2, canvas.height / 2);
-          // Convert zoomLevel from percentage (100) to scale factor (1.0)
+          // 2. Apply pan offset (before scaling so it's not affected by zoom)
+          ctx.translate(panOffset.x, panOffset.y);
+          // 3. Apply zoom scale
           const scaleFactor = zoomLevel / 100;
           ctx.scale(scaleFactor, scaleFactor);
-          ctx.translate(panOffset.x, panOffset.y);
 
           // Draw image centered and scaled to fit
           const x = -drawWidth / 2;
@@ -232,6 +238,31 @@ export function Canvas({
     };
   };
 
+  // Helper function to draw arrow head
+  const drawArrowHead = (
+    ctx: CanvasRenderingContext2D,
+    fromX: number,
+    fromY: number,
+    toX: number,
+    toY: number,
+    size: number = 10
+  ) => {
+    const angle = Math.atan2(toY - fromY, toX - fromX);
+    
+    ctx.beginPath();
+    ctx.moveTo(toX, toY);
+    ctx.lineTo(
+      toX - size * Math.cos(angle - Math.PI / 6),
+      toY - size * Math.sin(angle - Math.PI / 6)
+    );
+    ctx.moveTo(toX, toY);
+    ctx.lineTo(
+      toX - size * Math.cos(angle + Math.PI / 6),
+      toY - size * Math.sin(angle + Math.PI / 6)
+    );
+    ctx.stroke();
+  };
+
   // Helper function to render annotations in image coordinate space
   const renderAnnotationInImageSpace = (
     ctx: CanvasRenderingContext2D, 
@@ -248,10 +279,16 @@ export function Canvas({
 
       ctx.strokeStyle = dimension.color;
       ctx.lineWidth = 2;
+      
+      // Draw main line
       ctx.beginPath();
       ctx.moveTo(startX, startY);
       ctx.lineTo(endX, endY);
       ctx.stroke();
+      
+      // Draw arrow heads at both ends
+      drawArrowHead(ctx, endX, endY, startX, startY, 8);
+      drawArrowHead(ctx, startX, startY, endX, endY, 8);
     } else if (annotation.type === 'polygon') {
       const polygon = annotation.data as DimensionMarkDomain.IPolygon;
       if (polygon.vertices.length < 2) return;
@@ -323,11 +360,42 @@ export function Canvas({
       ctx.strokeStyle = '#999999';
       ctx.lineWidth = 2;
       ctx.setLineDash([5, 5]);
+      
+      // Draw main line
       ctx.beginPath();
       ctx.moveTo(startX, startY);
       ctx.lineTo(endX, endY);
       ctx.stroke();
+      
+      // Draw arrow heads at both ends
+      drawArrowHead(ctx, endX, endY, startX, startY, 8);
+      drawArrowHead(ctx, startX, startY, endX, endY, 8);
+      
       ctx.setLineDash([]);
+    } else if (preview.type === 'freehand' && preview.data.points) {
+      // Render freehand preview in real-time
+      const points = preview.data.points;
+      if (points.length < 2) return;
+
+      ctx.strokeStyle = '#666666';
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      ctx.beginPath();
+      const firstPoint = points[0];
+      const firstX = (firstPoint.x - imageWidth / 2) * scaleX;
+      const firstY = (firstPoint.y - imageHeight / 2) * scaleY;
+      ctx.moveTo(firstX, firstY);
+
+      for (let i = 1; i < points.length; i++) {
+        const point = points[i];
+        const x = (point.x - imageWidth / 2) * scaleX;
+        const y = (point.y - imageHeight / 2) * scaleY;
+        ctx.lineTo(x, y);
+      }
+
+      ctx.stroke();
     } else if (preview.type === 'polygon' && preview.data.vertices) {
       ctx.strokeStyle = '#FF0000';
       ctx.lineWidth = 2;
@@ -374,16 +442,17 @@ export function Canvas({
     const canvasX = event.clientX - rect.left;
     const canvasY = event.clientY - rect.top;
 
-    const imagePoint = canvasToImageCoords(canvasX, canvasY);
-
-    console.log('Mouse down:', { canvasX, canvasY, imagePoint, selectedTool });
-
     if (selectedTool === 'pan') {
-      setIsDrawing(true);
-      setCurrentDrawingState({ startX: canvasX, startY: canvasY, initialPan: { ...panOffset } });
+      setIsDragging(true);
+      setDragStart({ x: canvasX, y: canvasY });
+      setLastPanOffset({ ...panOffset });
       onDrawingStart();
       return;
     }
+
+    const imagePoint = canvasToImageCoords(canvasX, canvasY);
+
+    console.log('Mouse down:', { canvasX, canvasY, imagePoint, selectedTool });
 
     setIsDrawing(true);
     onDrawingStart();
@@ -399,15 +468,17 @@ export function Canvas({
         break;
 
       case 'polygon':
-        setCurrentDrawingState(ToolLogic.startPolygonDrawing(imagePoint));
-        onPreviewUpdate({
-          type: 'polygon',
-          data: { vertices: [imagePoint], cursorPoint: imagePoint }
-        });
+        // Polygon uses click events, not mouse down/up
+        // Don't set drawing state here to avoid conflicts
         break;
 
       case 'freehand':
         setCurrentDrawingState(ToolLogic.startFreehandDrawing(imagePoint));
+        // Start showing freehand preview immediately
+        onPreviewUpdate({
+          type: 'freehand',
+          data: { points: [imagePoint] }
+        });
         break;
 
       case 'arch':
@@ -449,6 +520,12 @@ export function Canvas({
   };
 
   const handleMouseUp = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    if (selectedTool === 'pan' && isDragging) {
+      setIsDragging(false);
+      onDrawingEnd();
+      return;
+    }
+
     if (!isDrawing) return;
 
     const canvas = canvasRef.current;
@@ -464,11 +541,6 @@ export function Canvas({
 
     setIsDrawing(false);
     onDrawingEnd();
-
-    if (selectedTool === 'pan') {
-      setCurrentDrawingState(null);
-      return;
-    }
 
     // Complete the annotation based on tool
     switch (selectedTool) {
@@ -516,7 +588,7 @@ export function Canvas({
 
       // Polygon continues on click, doesn't complete on mouse up
       case 'polygon':
-        // Add vertex on click, don't complete yet
+        // Polygon uses click events, not mouse up
         break;
     }
 
@@ -532,18 +604,23 @@ export function Canvas({
     const canvasX = event.clientX - rect.left;
     const canvasY = event.clientY - rect.top;
 
-    const imagePoint = canvasToImageCoords(canvasX, canvasY);
-
-    if (selectedTool === 'pan' && isDrawing && currentDrawingState) {
-      // Handle panning
-      const deltaX = canvasX - currentDrawingState.startX;
-      const deltaY = canvasY - currentDrawingState.startY;
+    // Handle panning with proper drag behavior
+    if (selectedTool === 'pan' && isDragging) {
+      const deltaX = canvasX - dragStart.x;
+      const deltaY = canvasY - dragStart.y;
       
-      // Update pan offset through parent component
-      // Note: This would need to be handled by the parent component
-      // For now, we'll just update the preview
+      const newPanOffset = {
+        x: lastPanOffset.x + deltaX,
+        y: lastPanOffset.y + deltaY
+      };
+      
+      if (onPanChange) {
+        onPanChange(newPanOffset);
+      }
       return;
     }
+
+    const imagePoint = canvasToImageCoords(canvasX, canvasY);
 
     if (!isDrawing) {
       // Update preview for tools that show preview while hovering
@@ -612,7 +689,7 @@ export function Canvas({
 
   const handleClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
     // Handle polygon vertex addition on click (separate from mouse down/up)
-    if (selectedTool === 'polygon' && !isDrawing) {
+    if (selectedTool === 'polygon') {
       const canvas = canvasRef.current;
       if (!canvas) return;
 
@@ -629,6 +706,14 @@ export function Canvas({
         onPreviewUpdate({
           type: 'polygon',
           data: { vertices: newState.vertices, cursorPoint: imagePoint }
+        });
+      } else {
+        // Start new polygon
+        const newState = ToolLogic.startPolygonDrawing(imagePoint);
+        setCurrentDrawingState(newState);
+        onPreviewUpdate({
+          type: 'polygon',
+          data: { vertices: [imagePoint], cursorPoint: imagePoint }
         });
       }
     }
@@ -651,6 +736,86 @@ export function Canvas({
     }
   };
 
+  // Touch event handlers for pinch-to-zoom
+  const handleTouchStart = (event: React.TouchEvent<HTMLCanvasElement>) => {
+    if (event.touches.length === 2) {
+      // Two finger touch - prepare for pinch zoom
+      const touch1 = event.touches[0];
+      const touch2 = event.touches[1];
+      const distance = Math.sqrt(
+        Math.pow(touch2.clientX - touch1.clientX, 2) + 
+        Math.pow(touch2.clientY - touch1.clientY, 2)
+      );
+      setLastTouchDistance(distance);
+      event.preventDefault();
+    } else if (event.touches.length === 1 && selectedTool !== 'pan') {
+      // Single finger touch - treat as mouse down for drawing
+      const touch = event.touches[0];
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const canvasX = touch.clientX - rect.left;
+      const canvasY = touch.clientY - rect.top;
+
+      // Simulate mouse down event
+      const mouseEvent = {
+        clientX: touch.clientX,
+        clientY: touch.clientY
+      } as React.MouseEvent<HTMLCanvasElement>;
+      
+      handleMouseDown(mouseEvent);
+    }
+  };
+
+  const handleTouchMove = (event: React.TouchEvent<HTMLCanvasElement>) => {
+    if (event.touches.length === 2 && lastTouchDistance !== null) {
+      // Two finger pinch zoom
+      const touch1 = event.touches[0];
+      const touch2 = event.touches[1];
+      const distance = Math.sqrt(
+        Math.pow(touch2.clientX - touch1.clientX, 2) + 
+        Math.pow(touch2.clientY - touch1.clientY, 2)
+      );
+      
+      const scale = distance / lastTouchDistance;
+      const newZoomLevel = Math.max(50, Math.min(300, zoomLevel * scale));
+      
+      // This would need to be handled by parent component
+      // For now, we'll just prevent default behavior
+      setLastTouchDistance(distance);
+      event.preventDefault();
+    } else if (event.touches.length === 1) {
+      // Single finger move - treat as mouse move for drawing
+      const touch = event.touches[0];
+      
+      // Simulate mouse move event
+      const mouseEvent = {
+        clientX: touch.clientX,
+        clientY: touch.clientY
+      } as React.MouseEvent<HTMLCanvasElement>;
+      
+      handleMouseMove(mouseEvent);
+    }
+  };
+
+  const handleTouchEnd = (event: React.TouchEvent<HTMLCanvasElement>) => {
+    if (event.touches.length === 0) {
+      // All fingers lifted
+      setLastTouchDistance(null);
+      
+      if (isDrawing) {
+        // Simulate mouse up event for drawing completion
+        const lastTouch = event.changedTouches[0];
+        const mouseEvent = {
+          clientX: lastTouch.clientX,
+          clientY: lastTouch.clientY
+        } as React.MouseEvent<HTMLCanvasElement>;
+        handleMouseUp(mouseEvent);
+      }
+    }
+  };
+
   return (
     <canvas
       ref={canvasRef}
@@ -660,6 +825,9 @@ export function Canvas({
       onMouseMove={handleMouseMove}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       role="img"
       aria-label="Canvas for dimension marking"
       style={{
@@ -668,7 +836,8 @@ export function Canvas({
         height: '100%',
         border: '1px solid #ccc',
         cursor: selectedTool === 'pan' ? 'grab' : 'crosshair',
-        backgroundColor: '#fafafa'
+        backgroundColor: '#fafafa',
+        touchAction: 'none' // Prevent default touch behaviors
       }}
     />
   );

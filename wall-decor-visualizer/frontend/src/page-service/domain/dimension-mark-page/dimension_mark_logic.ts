@@ -57,10 +57,7 @@ export function handlePan(
 ): IDimensionMarkPageState {
   return {
     ...state,
-    panOffset: {
-      x: state.panOffset.x + offset.x,
-      y: state.panOffset.y + offset.y
-    }
+    panOffset: offset // Set directly, don't add to existing offset
   };
 }
 

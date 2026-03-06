@@ -852,3 +852,27 @@ lets deploy
 repo name is no-dev, but folder is no-dev/wall-decor-visualizer/frontend -w hat to do
 ## Prompt 221 - 2026-03-06 15:09:00
 push all changes to main
+## Prompt 222 - 2026-03-06 15:10:00
+Undo redo working file dimension marking is okay - it is missing arrow headsfree hand now drawing as stroke is moving, get drawn when stroke complere, change this so that it moves as stroke tgetting drawn
+## Prompt 223 - 2026-03-06 15:11:00
+pan tool is not working - not doing anything poly gon tool is also not doing anything
+## Prompt 224 - 2026-03-06 15:12:00
+canavs keeps flickering as a I draw on it
+## 225. 2025-03-06 - Panning Still Too Fast
+**Timestamp**: 2025-03-06T[current_time]
+**User Query**: slowed but still running very fast
+## 226. 2025-03-06 - Pan Speed Still Too Fast, Runs Ahead of Mouse
+**Timestamp**: 2025-03-06T[current_time]
+**User Query**: still faster than mouse speed -- may be amount of displabement you are causing has to be lesser, does not stay tih mouse mpoints runs ahead
+## 227. 2025-03-06 - Pan Still Running Ahead of Mouse
+**Timestamp**: 2025-03-06T[current_time]
+**User Query**: still not staying with mouse points -- running ahead
+## 228. 2025-03-06 - Request for Standard Pan Implementation
+**Timestamp**: 2025-03-06T[current_time]
+**User Query**: still very unreliable - find a standard way to build pan donot just keep adjusting params
+## 229. 2025-03-06 - Pan Still Not Working
+**Timestamp**: 2025-03-06T[current_time]
+**User Query**: nopes not working
+## 230. 2025-03-06 - Request for 1:1 Mouse-Image Movement
+**Timestamp**: 2025-03-06T[current_time]
+**User Query**: just keep the image point under the move with the mouse and one movex mouse points iimg also moves with it
