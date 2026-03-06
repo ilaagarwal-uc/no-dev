@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { LoginPage } from './page-service/domain/login-page/login_page';
-import { Dashboard } from './page-service/domain/dashboard/dashboard';
+import { Dashboard } from './page-service/domain/dashboard/Dashboard';
 import { UploadPage } from './page-service/domain/upload-page/UploadPage';
+import { DimensionMarkPage } from './page-service/domain/dimension-mark-page/dimension_mark_page';
 import { getAuthToken, isTokenExpired, clearAuthToken } from './data-service/domain/auth';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -52,6 +53,14 @@ function App() {
           }
         />
         <Route
+          path="/dimension-mark"
+          element={
+            <ProtectedRoute>
+              <DimensionMarkPageWrapper />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/dashboard"
           element={
             <ProtectedRoute>
@@ -62,6 +71,75 @@ function App() {
         <Route path="/" element={<Navigate to="/login" />} />
       </Routes>
     </BrowserRouter>
+  );
+}
+
+interface IUploadedImageData {
+  imageUrl: string;
+  imageWidth: number;
+  imageHeight: number;
+}
+
+function DimensionMarkPageWrapper() {
+  const navigate = useNavigate();
+  const [imageData, setImageData] = useState<IUploadedImageData | null>(null);
+
+  useEffect(() => {
+    // Get image data from sessionStorage
+    const storedData = sessionStorage.getItem('uploadedImageData');
+    if (storedData) {
+      try {
+        setImageData(JSON.parse(storedData));
+      } catch (error) {
+        console.error('Failed to parse image data:', error);
+        navigate('/upload');
+      }
+    } else {
+      navigate('/upload');
+    }
+  }, [navigate]);
+
+  if (!imageData) {
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        backgroundColor: '#f9f7f4',
+        color: '#2d3748',
+        fontSize: '1.125rem',
+        fontWeight: '500'
+      }}>
+        Loading...
+      </div>
+    );
+  }
+
+  const handleSave = (annotations: any[], mergedImageBlob: Blob) => {
+    console.log('Dimension marking saved:', { annotations, blob: mergedImageBlob });
+    // Clear the stored image data
+    sessionStorage.removeItem('uploadedImageData');
+    // Navigate to dashboard or next page
+    navigate('/dashboard');
+  };
+
+  const handleSkip = () => {
+    console.log('Dimension marking skipped');
+    // Clear the stored image data
+    sessionStorage.removeItem('uploadedImageData');
+    // Navigate to dashboard or next page
+    navigate('/dashboard');
+  };
+
+  return (
+    <DimensionMarkPage
+      imageUrl={imageData.imageUrl}
+      imageWidth={imageData.imageWidth}
+      imageHeight={imageData.imageHeight}
+      onSave={handleSave}
+      onSkip={handleSkip}
+    />
   );
 }
 

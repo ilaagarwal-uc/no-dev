@@ -1,0 +1,74 @@
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  user-select: none;
+  min-width: 50px;
+}
+
+.toolbarHeader {
+  padding: 8px;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #e0e0e0;
+  cursor: move;
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  text-align: center;
+}
+
+.toolbarHeader:hover {
+  background-color: #efefef;
+}
+
+.toolsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.toolButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 8px;
+  min-height: 50px;
+  min-width: 50px;
+  background-color: #ffffff;
+  border: none;
+  border-bottom: 1px solid #e0e0e0;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 11px;
+  color: #666;
+}
+
+.toolButton:last-child {
+  border-bottom: none;
+}
+
+.toolButton:hover {
+  background-color: #f9f9f9;
+}
+
+.toolButton.active {
+  background-color: #e3f2fd;
+  color: #1976d2;
+  font-weight: 600;
+}
+
+.toolIcon {
+  font-size: 20px;
+  margin-bottom: 4px;
+}
+
+.toolLabel {
+  font-size: 10px;
+  text-align: center;
+  line-height: 1.2;
+}

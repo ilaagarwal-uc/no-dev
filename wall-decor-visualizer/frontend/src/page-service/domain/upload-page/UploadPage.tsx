@@ -119,9 +119,51 @@ export function UploadPage(): JSX.Element {
   const handleUploadSuccess = (imageId: string, gcpUrl: string): void => {
     setSuccessMessage(`Image uploaded successfully! Image ID: ${imageId}`);
     setErrorMessage(null);
-    setTimeout(() => {
-      setSuccessMessage(null);
-    }, 5000);
+    
+    console.log('handleUploadSuccess: Processing upload', { imageId, gcpUrl, userId });
+    
+    // Extract userId, imageId, and filename from gcpUrl
+    // Format: https://storage.googleapis.com/wall-decor-visualizer-images/{userId}/{imageId}/{filename}
+    const urlParts = gcpUrl.split('/');
+    const extractedUserId = urlParts[urlParts.length - 3]; // Get userId from URL
+    const extractedImageId = urlParts[urlParts.length - 2]; // Get imageId from URL
+    const filename = urlParts[urlParts.length - 1]; // Get filename from URL
+    
+    console.log('handleUploadSuccess: Extracted from URL', { extractedUserId, extractedImageId, filename });
+    
+    // Construct proxy URL
+    const proxyUrl = `/api/images/${extractedUserId}/${extractedImageId}/${filename}`;
+    console.log('handleUploadSuccess: Proxy URL', { proxyUrl });
+    
+    // Get image dimensions
+    const img = new Image();
+    img.onload = () => {
+      console.log('handleUploadSuccess: Image dimensions loaded', { width: img.naturalWidth, height: img.naturalHeight });
+      
+      const imageData = {
+        imageUrl: proxyUrl,
+        imageWidth: img.naturalWidth,
+        imageHeight: img.naturalHeight
+      };
+      console.log('handleUploadSuccess: Storing image data', imageData);
+      sessionStorage.setItem('uploadedImageData', JSON.stringify(imageData));
+      
+      // Redirect to dimension marking page
+      navigate('/dimension-mark');
+    };
+    img.onerror = () => {
+      console.error('handleUploadSuccess: Failed to load image for dimensions');
+      
+      const imageData = {
+        imageUrl: proxyUrl,
+        imageWidth: 1920,
+        imageHeight: 1080
+      };
+      console.log('handleUploadSuccess: Storing image data (fallback)', imageData);
+      sessionStorage.setItem('uploadedImageData', JSON.stringify(imageData));
+      navigate('/dimension-mark');
+    };
+    img.src = gcpUrl;
   };
 
   const handleUploadError = (error: string): void => {
