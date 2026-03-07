@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as ToolLogic from '../../../../src/page-service/domain/dimension-mark-page/tool_logic';
-import * as DimensionMarkDomain from '@data-service/domain/dimension-mark/index.js';
+import * as DimensionMarkDomain from '../../../../src/data-service/domain/dimension-mark/index.js';
 
 describe('tool_logic', () => {
   describe('Polygon Tool', () => {
@@ -38,6 +38,61 @@ describe('tool_logic', () => {
         expect(newState.vertices[0]).toEqual({ x: 100, y: 100 });
         expect(newState.vertices[1]).toEqual(vertex2);
         expect(newState.vertices[2]).toEqual(vertex3);
+      });
+    });
+
+    describe('isNearFirstVertex', () => {
+      it('should return true when point is within threshold of first vertex', () => {
+        const vertices = [
+          { x: 100, y: 100 },
+          { x: 200, y: 100 },
+          { x: 200, y: 200 }
+        ];
+        const nearPoint = { x: 105, y: 105 }; // 5 pixels away
+
+        const result = ToolLogic.isNearFirstVertex(vertices, nearPoint, 10);
+
+        expect(result).toBe(true);
+      });
+
+      it('should return false when point is outside threshold of first vertex', () => {
+        const vertices = [
+          { x: 100, y: 100 },
+          { x: 200, y: 100 },
+          { x: 200, y: 200 }
+        ];
+        const farPoint = { x: 120, y: 120 }; // ~28 pixels away
+
+        const result = ToolLogic.isNearFirstVertex(vertices, farPoint, 10);
+
+        expect(result).toBe(false);
+      });
+
+      it('should return false when polygon has less than 3 vertices', () => {
+        const vertices = [
+          { x: 100, y: 100 },
+          { x: 200, y: 100 }
+        ];
+        const nearPoint = { x: 105, y: 105 };
+
+        const result = ToolLogic.isNearFirstVertex(vertices, nearPoint, 10);
+
+        expect(result).toBe(false);
+      });
+
+      it('should use custom threshold', () => {
+        const vertices = [
+          { x: 100, y: 100 },
+          { x: 200, y: 100 },
+          { x: 200, y: 200 }
+        ];
+        const point = { x: 115, y: 115 }; // ~21 pixels away
+
+        const resultSmallThreshold = ToolLogic.isNearFirstVertex(vertices, point, 10);
+        const resultLargeThreshold = ToolLogic.isNearFirstVertex(vertices, point, 25);
+
+        expect(resultSmallThreshold).toBe(false);
+        expect(resultLargeThreshold).toBe(true);
       });
     });
 
@@ -406,18 +461,18 @@ describe('tool_logic', () => {
         const corner = ToolLogic.createConcaveCorner(point, imageWidth);
 
         expect(corner.point).toEqual(point);
-        expect(corner.size).toBe(30); // 3% of 1000
+        expect(corner.size).toBe(15); // 1.5% of 1000
         expect(corner.color).toBe('#0000FF');
         expect(corner.strokeColor).toBe('#000000');
       });
 
-      it('should calculate size as 3% of image width', () => {
+      it('should calculate size as 1.5% of image width', () => {
         const point = { x: 50, y: 50 };
         const imageWidth = 500;
 
         const corner = ToolLogic.createConcaveCorner(point, imageWidth);
 
-        expect(corner.size).toBe(15); // 3% of 500
+        expect(corner.size).toBe(7.5); // 1.5% of 500
       });
 
       it('should handle different image widths', () => {
@@ -436,7 +491,7 @@ describe('tool_logic', () => {
         const corner = ToolLogic.createConcaveCorner(point, imageWidth);
 
         expect(corner.point).toEqual(point);
-        expect(corner.size).toBe(30);
+        expect(corner.size).toBe(15);
       });
     });
 
@@ -448,18 +503,18 @@ describe('tool_logic', () => {
         const corner = ToolLogic.createConvexCorner(point, imageWidth);
 
         expect(corner.point).toEqual(point);
-        expect(corner.size).toBe(30); // 3% of 1000
+        expect(corner.size).toBe(15); // 1.5% of 1000
         expect(corner.color).toBe('#0000FF');
         expect(corner.strokeColor).toBe('#000000');
       });
 
-      it('should calculate size as 3% of image width', () => {
+      it('should calculate size as 1.5% of image width', () => {
         const point = { x: 50, y: 50 };
         const imageWidth = 500;
 
         const corner = ToolLogic.createConvexCorner(point, imageWidth);
 
-        expect(corner.size).toBe(15); // 3% of 500
+        expect(corner.size).toBe(7.5); // 1.5% of 500
       });
 
       it('should handle different image widths', () => {
@@ -478,7 +533,7 @@ describe('tool_logic', () => {
         const corner = ToolLogic.createConvexCorner(point, imageWidth);
 
         expect(corner.point).toEqual(point);
-        expect(corner.size).toBe(30);
+        expect(corner.size).toBe(15);
       });
     });
   });

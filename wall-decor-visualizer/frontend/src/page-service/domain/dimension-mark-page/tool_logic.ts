@@ -21,6 +21,22 @@ export function addPolygonVertex(
   };
 }
 
+// Helper function to check if a point is near the first vertex (for closing polygon)
+export function isNearFirstVertex(
+  vertices: DimensionMarkDomain.IPoint[],
+  point: DimensionMarkDomain.IPoint,
+  threshold: number = 10
+): boolean {
+  if (vertices.length < 3) return false; // Need at least 3 vertices to close
+  
+  const firstVertex = vertices[0];
+  const distance = Math.sqrt(
+    Math.pow(point.x - firstVertex.x, 2) + Math.pow(point.y - firstVertex.y, 2)
+  );
+  
+  return distance <= threshold;
+}
+
 export function closePolygon(state: IPolygonDrawingState): DimensionMarkDomain.IPolygon {
   const vertices = state.vertices;
   const area = calculatePolygonArea(vertices);
@@ -138,8 +154,11 @@ export function calculateArchCenter(
       y: (p1.y + p2.y) / 2
     };
   } else {
-    // For 90° arch, center is at p1
-    return p1;
+    // For 90° arch, center is ALWAYS at p1 (start point)
+    return {
+      x: p1.x,
+      y: p1.y
+    };
   }
 }
 
@@ -168,7 +187,7 @@ export function createConcaveCorner(
 ): DimensionMarkDomain.IConcaveCorner {
   return {
     point,
-    size: imageWidth * 0.03,
+    size: imageWidth * 0.015, // 1.5% of original image width (half of 3%)
     color: '#0000FF',
     strokeColor: '#000000'
   };
@@ -180,7 +199,7 @@ export function createConvexCorner(
 ): DimensionMarkDomain.IConvexCorner {
   return {
     point,
-    size: imageWidth * 0.03,
+    size: imageWidth * 0.015, // 1.5% of original image width (half of 3%)
     color: '#0000FF',
     strokeColor: '#000000'
   };

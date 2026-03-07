@@ -29,8 +29,74 @@ export function Canvas({
   const [isDragging, setIsDragging] = React.useState(false);
   const [dragStart, setDragStart] = React.useState({ x: 0, y: 0 });
   const [lastPanOffset, setLastPanOffset] = React.useState({ x: 0, y: 0 });
+  
+  // Refs for performance optimization and cleanup
+  const previewUpdateTimeoutRef = useRef<number | null>(null);
+  const renderRequestRef = useRef<number | null>(null);
+  const lastRenderTimeRef = useRef<number>(0);
 
-  // Set canvas size on mount and window resize
+  // Optimized preview update with RAF and throttling
+  const debouncedPreviewUpdate = React.useCallback((previewData: any) => {
+    if (previewUpdateTimeoutRef.current) {
+      clearTimeout(previewUpdateTimeoutRef.current);
+      previewUpdateTimeoutRef.current = null;
+    }
+    
+    // Use requestAnimationFrame for smoother updates
+    if (renderRequestRef.current) {
+      cancelAnimationFrame(renderRequestRef.current);
+      renderRequestRef.current = null;
+    }
+    
+    renderRequestRef.current = requestAnimationFrame(() => {
+      const now = performance.now();
+      if (now - lastRenderTimeRef.current >= 16) { // 60fps throttle
+        onPreviewUpdate(previewData);
+        lastRenderTimeRef.current = now;
+      }
+      renderRequestRef.current = null;
+    });
+  }, [onPreviewUpdate]);
+
+  // Cleanup on unmount and dependency changes
+  useEffect(() => {
+    return () => {
+      if (previewUpdateTimeoutRef.current) {
+        clearTimeout(previewUpdateTimeoutRef.current);
+        previewUpdateTimeoutRef.current = null;
+      }
+      if (renderRequestRef.current) {
+        cancelAnimationFrame(renderRequestRef.current);
+        renderRequestRef.current = null;
+      }
+    };
+  }, [onPreviewUpdate]);
+
+  // Global cleanup on component unmount
+  useEffect(() => {
+    return () => {
+      // Clear any remaining timeouts
+      if (previewUpdateTimeoutRef.current) {
+        clearTimeout(previewUpdateTimeoutRef.current);
+        previewUpdateTimeoutRef.current = null;
+      }
+      if (renderRequestRef.current) {
+        cancelAnimationFrame(renderRequestRef.current);
+        renderRequestRef.current = null;
+      }
+      if (mouseMoveTimeoutRef.current) {
+        clearTimeout(mouseMoveTimeoutRef.current);
+        mouseMoveTimeoutRef.current = null;
+      }
+      
+      // Clear image references to help garbage collection
+      setCurrentImage(null);
+      setImageLoaded(false);
+      setCurrentDrawingState(null);
+    };
+  }, []); // Run only on unmount
+
+  // Set canvas size on mount and window resize - with proper cleanup
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -38,158 +104,209 @@ export function Canvas({
     const resizeCanvas = () => {
       const container = canvas.parentElement;
       if (container) {
-        canvas.width = container.clientWidth;
-        canvas.height = container.clientHeight;
+        // Store previous dimensions to avoid unnecessary updates
+        const newWidth = container.clientWidth;
+        const newHeight = container.clientHeight;
+        
+        if (canvas.width !== newWidth || canvas.height !== newHeight) {
+          canvas.width = newWidth;
+          canvas.height = newHeight;
+        }
       }
     };
 
     resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-    return () => window.removeEventListener('resize', resizeCanvas);
-  }, []);
+    
+    // Use passive listener for better performance
+    const resizeOptions = { passive: true };
+    window.addEventListener('resize', resizeCanvas, resizeOptions);
+    
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+    };
+  }, []); // Empty dependency array - only run once
 
-  // Render image and annotations
+  // Render image and annotations - split into separate effects to reduce flickering
+  const [imageLoaded, setImageLoaded] = React.useState(false);
+  const [currentImage, setCurrentImage] = React.useState<HTMLImageElement | null>(null);
+
+  // Load image only when imageUrl changes - with proper cleanup
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Clear canvas
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    console.log('Canvas: Starting image load', { imageUrl, imageWidth, imageHeight });
-
-    // Fetch image with JWT token
+    let isCancelled = false;
+    let objectUrl: string | null = null;
+    
     const loadImage = async () => {
       try {
         const token = getAuthToken();
-        console.log('Canvas: Got auth token', { hasToken: !!token });
-
         if (!token) {
           console.error('Canvas: No auth token available');
-          ctx.fillStyle = '#ff0000';
-          ctx.font = '16px Arial';
-          ctx.fillText('Authentication required', 10, 30);
           return;
         }
 
-        // Fetch image with Authorization header
         const response = await fetch(imageUrl, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          headers: { 'Authorization': `Bearer ${token}` }
         });
 
         if (!response.ok) {
-          console.error('Canvas: Image fetch failed', { status: response.status, statusText: response.statusText });
-          ctx.fillStyle = '#ff0000';
-          ctx.font = '16px Arial';
-          ctx.fillText(`Failed to load image (${response.status})`, 10, 30);
+          console.error('Canvas: Image fetch failed', { status: response.status });
           return;
         }
 
         const blob = await response.blob();
-        const objectUrl = URL.createObjectURL(blob);
-        console.log('Canvas: Image blob created', { blobSize: blob.size, blobType: blob.type });
+        objectUrl = URL.createObjectURL(blob);
 
-        // Load and render image
         const img = new Image();
         img.crossOrigin = 'anonymous';
         
         img.onload = () => {
-          console.log('Canvas: Image loaded successfully');
-          // Save context state
-          ctx.save();
-
-          // Calculate scale to fit image in canvas while maintaining aspect ratio
-          const canvasAspect = canvas.width / canvas.height;
-          const imageAspect = img.naturalWidth / img.naturalHeight;
-          
-          let drawWidth, drawHeight;
-          
-          if (imageAspect > canvasAspect) {
-            // Image is wider than canvas - fit to width
-            drawWidth = canvas.width * 0.9; // 90% of canvas width for padding
-            drawHeight = drawWidth / imageAspect;
-          } else {
-            // Image is taller than canvas - fit to height
-            drawHeight = canvas.height * 0.9; // 90% of canvas height for padding
-            drawWidth = drawHeight * imageAspect;
+          if (!isCancelled) {
+            setCurrentImage(img);
+            setImageLoaded(true);
           }
-
-          // Ensure the image doesn't exceed canvas bounds even with padding
-          if (drawWidth > canvas.width * 0.95) {
-            drawWidth = canvas.width * 0.95;
-            drawHeight = drawWidth / imageAspect;
+          // Always clean up object URL
+          if (objectUrl) {
+            URL.revokeObjectURL(objectUrl);
+            objectUrl = null;
           }
-          if (drawHeight > canvas.height * 0.95) {
-            drawHeight = canvas.height * 0.95;
-            drawWidth = drawHeight * imageAspect;
-          }
-
-          // Apply zoom and pan transformations in correct order
-          // 1. First translate to center of canvas
-          ctx.translate(canvas.width / 2, canvas.height / 2);
-          // 2. Apply pan offset (before scaling so it's not affected by zoom)
-          ctx.translate(panOffset.x, panOffset.y);
-          // 3. Apply zoom scale
-          const scaleFactor = zoomLevel / 100;
-          ctx.scale(scaleFactor, scaleFactor);
-
-          // Draw image centered and scaled to fit
-          const x = -drawWidth / 2;
-          const y = -drawHeight / 2;
-          ctx.drawImage(img, x, y, drawWidth, drawHeight);
-
-          // Draw annotations in the same coordinate space as the image
-          // Since we're already in the transformed coordinate space, we need to render annotations
-          // using the image coordinate system but scaled to match the drawn image
-          const imageScaleX = drawWidth / imageWidth;
-          const imageScaleY = drawHeight / imageHeight;
-          
-          annotations.forEach(annotation => {
-            renderAnnotationInImageSpace(ctx, annotation, imageScaleX, imageScaleY);
-          });
-
-          // Draw preview if exists
-          if (previewData) {
-            renderPreviewInImageSpace(ctx, previewData, imageScaleX, imageScaleY);
-          }
-
-          // Restore context state
-          ctx.restore();
-
-          // Clean up object URL
-          URL.revokeObjectURL(objectUrl);
         };
 
         img.onerror = () => {
-          console.error('Canvas: Image failed to load from blob');
-          ctx.fillStyle = '#ff0000';
-          ctx.font = '16px Arial';
-          ctx.fillText('Failed to load image', 10, 30);
-          URL.revokeObjectURL(objectUrl);
+          console.error('Canvas: Image failed to load');
+          if (objectUrl) {
+            URL.revokeObjectURL(objectUrl);
+            objectUrl = null;
+          }
         };
 
         img.onabort = () => {
-          console.error('Canvas: Image load aborted');
-          URL.revokeObjectURL(objectUrl);
+          if (objectUrl) {
+            URL.revokeObjectURL(objectUrl);
+            objectUrl = null;
+          }
         };
 
         img.src = objectUrl;
       } catch (error) {
         console.error('Canvas: Error loading image', error);
-        ctx.fillStyle = '#ff0000';
-        ctx.font = '16px Arial';
-        ctx.fillText('Error loading image', 10, 30);
+        if (objectUrl) {
+          URL.revokeObjectURL(objectUrl);
+          objectUrl = null;
+        }
       }
     };
 
+    setImageLoaded(false);
+    setCurrentImage(null); // Clear previous image
     loadImage();
-  }, [imageUrl, annotations, zoomLevel, panOffset, previewData, imageWidth, imageHeight]);
+
+    return () => {
+      isCancelled = true;
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+        objectUrl = null;
+      }
+    };
+  }, [imageUrl]);
+
+  // Render canvas only when necessary - optimized with dirty checking
+  const lastRenderStateRef = useRef<string>('');
+  
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !currentImage || !imageLoaded) return;
+
+    // Create render state hash to avoid unnecessary redraws
+    const renderState = JSON.stringify({
+      imageLoaded,
+      annotationsLength: annotations.length,
+      zoomLevel,
+      panOffset,
+      previewData: previewData, // Include full preview data, not just type
+      canvasSize: `${canvas.width}x${canvas.height}`
+    });
+
+    // Skip render if nothing changed
+    if (renderState === lastRenderStateRef.current) {
+      return;
+    }
+    lastRenderStateRef.current = renderState;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Use requestAnimationFrame for smoother rendering
+    const render = () => {
+      try {
+        // Clear canvas efficiently
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Save context state
+        ctx.save();
+
+        // Calculate scale to fit image in canvas while maintaining aspect ratio
+        const canvasAspect = canvas.width / canvas.height;
+        const imageAspect = currentImage.naturalWidth / currentImage.naturalHeight;
+        
+        let drawWidth, drawHeight;
+        
+        if (imageAspect > canvasAspect) {
+          drawWidth = canvas.width * 0.9;
+          drawHeight = drawWidth / imageAspect;
+        } else {
+          drawHeight = canvas.height * 0.9;
+          drawWidth = drawHeight * imageAspect;
+        }
+
+        if (drawWidth > canvas.width * 0.95) {
+          drawWidth = canvas.width * 0.95;
+          drawHeight = drawWidth / imageAspect;
+        }
+        if (drawHeight > canvas.height * 0.95) {
+          drawHeight = canvas.height * 0.95;
+          drawWidth = drawHeight * imageAspect;
+        }
+
+        // Apply transformations
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.translate(panOffset.x, panOffset.y);
+        const scaleFactor = zoomLevel / 100;
+        ctx.scale(scaleFactor, scaleFactor);
+
+        // Draw image
+        const x = -drawWidth / 2;
+        const y = -drawHeight / 2;
+        ctx.drawImage(currentImage, x, y, drawWidth, drawHeight);
+
+        // Draw annotations with batching for better performance
+        const imageScaleX = drawWidth / imageWidth;
+        const imageScaleY = drawHeight / imageHeight;
+        
+        // Batch render annotations to reduce context switches
+        annotations.forEach(annotation => {
+          renderAnnotationInImageSpace(ctx, annotation, imageScaleX, imageScaleY);
+        });
+
+        // Draw preview
+        if (previewData) {
+          renderPreviewInImageSpace(ctx, previewData, imageScaleX, imageScaleY);
+        }
+      } catch (error) {
+        console.error('Canvas rendering error:', error);
+      } finally {
+        // Always restore context state
+        ctx.restore();
+      }
+    };
+
+    // Use RAF for smoother rendering
+    const rafId = requestAnimationFrame(render);
+    
+    return () => {
+      cancelAnimationFrame(rafId);
+    };
+  }, [currentImage, imageLoaded, annotations, zoomLevel, panOffset, previewData, imageWidth, imageHeight]);
 
   // Helper function to convert canvas coordinates to image coordinates
   const canvasToImageCoords = (canvasX: number, canvasY: number) => {
@@ -315,6 +432,18 @@ export function Canvas({
       ctx.strokeStyle = polygon.color;
       ctx.lineWidth = 2;
       ctx.stroke();
+
+      // Draw filled red circles at each vertex
+      ctx.fillStyle = polygon.color;
+      for (let i = 0; i < polygon.vertices.length; i++) {
+        const vertex = polygon.vertices[i];
+        const x = (vertex.x - imageWidth / 2) * scaleX;
+        const y = (vertex.y - imageHeight / 2) * scaleY;
+        
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, 2 * Math.PI);
+        ctx.fill();
+      }
     } else if (annotation.type === 'freehand') {
       const freehand = annotation.data as DimensionMarkDomain.IFreehand;
       if (freehand.points.length < 2) return;
@@ -338,6 +467,102 @@ export function Canvas({
       }
 
       ctx.stroke();
+    } else if (annotation.type === 'arch') {
+      const arch = annotation.data as DimensionMarkDomain.IArch;
+      if (!arch.centerPoint || !arch.circumferencePoints || arch.circumferencePoints.length < 2) return;
+
+      const centerX = (arch.centerPoint.x - imageWidth / 2) * scaleX;
+      const centerY = (arch.centerPoint.y - imageHeight / 2) * scaleY;
+      const scaledRadius = arch.radius * Math.min(scaleX, scaleY);
+
+      if (arch.type === '180') {
+        // 180° arch - calculate angles normally
+        const startAngle = Math.atan2(
+          (arch.circumferencePoints[0].y - imageHeight / 2) * scaleY - centerY,
+          (arch.circumferencePoints[0].x - imageWidth / 2) * scaleX - centerX
+        );
+        const endAngle = Math.atan2(
+          (arch.circumferencePoints[1].y - imageHeight / 2) * scaleY - centerY,
+          (arch.circumferencePoints[1].x - imageWidth / 2) * scaleX - centerX
+        );
+
+        ctx.strokeStyle = arch.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, scaledRadius, startAngle, endAngle, false);
+        ctx.stroke();
+      } else {
+        // 90° arch - draw exactly 90 degrees from start point
+        const startPointX = (arch.circumferencePoints[0].x - imageWidth / 2) * scaleX;
+        const startPointY = (arch.circumferencePoints[0].y - imageHeight / 2) * scaleY;
+        const endPointX = (arch.circumferencePoints[1].x - imageWidth / 2) * scaleX;
+        const endPointY = (arch.circumferencePoints[1].y - imageHeight / 2) * scaleY;
+        
+        // Calculate the angle from center to end point
+        const endAngle = Math.atan2(endPointY - centerY, endPointX - centerX);
+        // Start angle is 90° (π/2) counter-clockwise from end angle
+        const startAngle = endAngle - Math.PI / 2;
+
+        ctx.strokeStyle = arch.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, scaledRadius, startAngle, endAngle, false);
+        ctx.stroke();
+      }
+    } else if (annotation.type === 'concave') {
+      const corner = annotation.data as DimensionMarkDomain.IConcaveCorner;
+      const cornerX = (corner.point.x - imageWidth / 2) * scaleX;
+      const cornerY = (corner.point.y - imageHeight / 2) * scaleY;
+      const scaledSize = corner.size * Math.min(scaleX, scaleY);
+
+      // Draw concave corner: L-shape with vertical line going DOWN and horizontal line going LEFT
+      ctx.strokeStyle = corner.strokeColor;
+      ctx.lineWidth = 4; // 4px thick as per requirements
+      
+      // Vertical line going DOWN
+      ctx.beginPath();
+      ctx.moveTo(cornerX, cornerY);
+      ctx.lineTo(cornerX, cornerY + scaledSize);
+      ctx.stroke();
+      
+      // Horizontal line going LEFT
+      ctx.beginPath();
+      ctx.moveTo(cornerX, cornerY);
+      ctx.lineTo(cornerX - scaledSize, cornerY);
+      ctx.stroke();
+      
+      // Blue dot at intersection
+      ctx.fillStyle = corner.color;
+      ctx.beginPath();
+      ctx.arc(cornerX, cornerY, 3, 0, 2 * Math.PI);
+      ctx.fill();
+    } else if (annotation.type === 'convex') {
+      const corner = annotation.data as DimensionMarkDomain.IConvexCorner;
+      const cornerX = (corner.point.x - imageWidth / 2) * scaleX;
+      const cornerY = (corner.point.y - imageHeight / 2) * scaleY;
+      const scaledSize = corner.size * Math.min(scaleX, scaleY);
+
+      // Draw convex corner: L-shape with vertical line going UP and horizontal line going RIGHT
+      ctx.strokeStyle = corner.strokeColor;
+      ctx.lineWidth = 4; // 4px thick as per requirements
+      
+      // Vertical line going UP
+      ctx.beginPath();
+      ctx.moveTo(cornerX, cornerY);
+      ctx.lineTo(cornerX, cornerY - scaledSize);
+      ctx.stroke();
+      
+      // Horizontal line going RIGHT
+      ctx.beginPath();
+      ctx.moveTo(cornerX, cornerY);
+      ctx.lineTo(cornerX + scaledSize, cornerY);
+      ctx.stroke();
+      
+      // Blue dot at intersection
+      ctx.fillStyle = corner.color;
+      ctx.beginPath();
+      ctx.arc(cornerX, cornerY, 3, 0, 2 * Math.PI);
+      ctx.fill();
     }
     // Add other annotation types as needed
   };
@@ -357,9 +582,9 @@ export function Canvas({
       const endX = (preview.data.cursorPoint.x - imageWidth / 2) * scaleX;
       const endY = (preview.data.cursorPoint.y - imageHeight / 2) * scaleY;
 
-      ctx.strokeStyle = '#999999';
+      ctx.strokeStyle = '#000000'; // Black color for dimension preview
       ctx.lineWidth = 2;
-      ctx.setLineDash([5, 5]);
+      ctx.setLineDash([]); // Solid line instead of dashed for better visibility
       
       // Draw main line
       ctx.beginPath();
@@ -370,8 +595,6 @@ export function Canvas({
       // Draw arrow heads at both ends
       drawArrowHead(ctx, endX, endY, startX, startY, 8);
       drawArrowHead(ctx, startX, startY, endX, endY, 8);
-      
-      ctx.setLineDash([]);
     } else if (preview.type === 'freehand' && preview.data.points) {
       // Render freehand preview in real-time
       const points = preview.data.points;
@@ -398,24 +621,39 @@ export function Canvas({
       ctx.stroke();
     } else if (preview.type === 'polygon' && preview.data.vertices) {
       ctx.strokeStyle = '#FF0000';
+      ctx.fillStyle = '#FF0000';
       ctx.lineWidth = 2;
 
-      // Draw lines between vertices
-      for (let i = 0; i < preview.data.vertices.length - 1; i++) {
-        const p1 = preview.data.vertices[i];
-        const p2 = preview.data.vertices[i + 1];
-        const x1 = (p1.x - imageWidth / 2) * scaleX;
-        const y1 = (p1.y - imageHeight / 2) * scaleY;
-        const x2 = (p2.x - imageWidth / 2) * scaleX;
-        const y2 = (p2.y - imageHeight / 2) * scaleY;
+      // Always draw all vertices as filled circles first
+      for (let i = 0; i < preview.data.vertices.length; i++) {
+        const vertex = preview.data.vertices[i];
+        const x = (vertex.x - imageWidth / 2) * scaleX;
+        const y = (vertex.y - imageHeight / 2) * scaleY;
         
         ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
+        ctx.arc(x, y, 4, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+
+      // Draw all connected lines between vertices in a single path
+      if (preview.data.vertices.length > 1) {
+        ctx.beginPath();
+        const firstVertex = preview.data.vertices[0];
+        const firstX = (firstVertex.x - imageWidth / 2) * scaleX;
+        const firstY = (firstVertex.y - imageHeight / 2) * scaleY;
+        ctx.moveTo(firstX, firstY);
+
+        // Draw solid lines to all subsequent vertices
+        for (let i = 1; i < preview.data.vertices.length; i++) {
+          const vertex = preview.data.vertices[i];
+          const x = (vertex.x - imageWidth / 2) * scaleX;
+          const y = (vertex.y - imageHeight / 2) * scaleY;
+          ctx.lineTo(x, y);
+        }
         ctx.stroke();
       }
 
-      // Draw preview line to cursor
+      // Draw preview line to cursor (dashed)
       if (preview.data.cursorPoint && preview.data.vertices.length > 0) {
         const lastVertex = preview.data.vertices[preview.data.vertices.length - 1];
         const lastX = (lastVertex.x - imageWidth / 2) * scaleX;
@@ -431,6 +669,43 @@ export function Canvas({
         ctx.stroke();
         ctx.setLineDash([]);
       }
+    } else if (preview.type === 'arch' && preview.data.centerPoint && preview.data.radius) {
+      const centerX = (preview.data.centerPoint.x - imageWidth / 2) * scaleX;
+      const centerY = (preview.data.centerPoint.y - imageHeight / 2) * scaleY;
+      const scaledRadius = preview.data.radius * Math.min(scaleX, scaleY);
+
+      ctx.strokeStyle = '#000000'; // Changed to black
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      
+      // Check if this is a 90° or 180° arch based on the drawing state
+      // For 90° arch, the center is at start point, so we can detect this
+      const startX = (preview.data.startPoint.x - imageWidth / 2) * scaleX;
+      const startY = (preview.data.startPoint.y - imageHeight / 2) * scaleY;
+      const endX = (preview.data.cursorPoint.x - imageWidth / 2) * scaleX;
+      const endY = (preview.data.cursorPoint.y - imageHeight / 2) * scaleY;
+      
+      const isNinetyDegree = (Math.abs(centerX - startX) < 1 && Math.abs(centerY - startY) < 1);
+      
+      if (isNinetyDegree) {
+        // 90° arch preview - draw exactly 90 degrees
+        const endAngle = Math.atan2(endY - centerY, endX - centerX);
+        const startAngle = endAngle - Math.PI / 2;
+        
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, scaledRadius, startAngle, endAngle, false);
+        ctx.stroke();
+      } else {
+        // 180° arch preview - use original logic
+        const startAngle = Math.atan2(startY - centerY, startX - centerX);
+        const endAngle = Math.atan2(endY - centerY, endX - centerX);
+        
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, scaledRadius, startAngle, endAngle, false);
+        ctx.stroke();
+      }
+      
+      ctx.setLineDash([]);
     }
   };
 
@@ -470,6 +745,8 @@ export function Canvas({
       case 'polygon':
         // Polygon uses click events, not mouse down/up
         // Don't set drawing state here to avoid conflicts
+        // The polygon tool is handled entirely in handleClick
+        setIsDrawing(false); // Ensure polygon doesn't interfere with mouse down/up
         break;
 
       case 'freehand':
@@ -589,14 +866,43 @@ export function Canvas({
       // Polygon continues on click, doesn't complete on mouse up
       case 'polygon':
         // Polygon uses click events, not mouse up
-        break;
+        // Don't clear drawing state for polygon tool
+        return;
     }
 
     setCurrentDrawingState(null);
     onPreviewUpdate(undefined);
   };
 
-  const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
+  // Optimized mouse move with better throttling
+  const lastMouseMoveRef = useRef<number>(0);
+  const mouseMoveTimeoutRef = useRef<number | null>(null);
+  const MOUSE_MOVE_THROTTLE = 16; // ~60fps
+
+  const handleMouseMove = React.useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
+    const now = performance.now();
+    
+    // Clear any pending timeout
+    if (mouseMoveTimeoutRef.current) {
+      clearTimeout(mouseMoveTimeoutRef.current);
+      mouseMoveTimeoutRef.current = null;
+    }
+    
+    // Throttle mouse move events more aggressively
+    if (now - lastMouseMoveRef.current < MOUSE_MOVE_THROTTLE) {
+      // Schedule the update for later
+      mouseMoveTimeoutRef.current = window.setTimeout(() => {
+        processMouseMove(event);
+        mouseMoveTimeoutRef.current = null;
+      }, MOUSE_MOVE_THROTTLE);
+      return;
+    }
+    
+    lastMouseMoveRef.current = now;
+    processMouseMove(event);
+  }, [selectedTool, isDragging, isDrawing, currentDrawingState, panOffset, dragStart, lastPanOffset, onPanChange]);
+
+  const processMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -604,10 +910,10 @@ export function Canvas({
     const canvasX = event.clientX - rect.left;
     const canvasY = event.clientY - rect.top;
 
-    // Handle panning with proper drag behavior
+    // Handle panning with proper drag behavior and reduced sensitivity
     if (selectedTool === 'pan' && isDragging) {
-      const deltaX = canvasX - dragStart.x;
-      const deltaY = canvasY - dragStart.y;
+      const deltaX = (canvasX - dragStart.x) * 0.5; // Reduce sensitivity by 50%
+      const deltaY = (canvasY - dragStart.y) * 0.5; // Reduce sensitivity by 50%
       
       const newPanOffset = {
         x: lastPanOffset.x + deltaX,
@@ -622,17 +928,19 @@ export function Canvas({
 
     const imagePoint = canvasToImageCoords(canvasX, canvasY);
 
+    // Throttle polygon preview updates to reduce memory usage
+    if (selectedTool === 'polygon' && currentDrawingState) {
+      // Polygon needs immediate feedback for line visibility
+      onPreviewUpdate({
+        type: 'polygon',
+        data: { 
+          vertices: currentDrawingState.vertices, 
+          cursorPoint: imagePoint 
+        }
+      });
+    }
+
     if (!isDrawing) {
-      // Update preview for tools that show preview while hovering
-      if (selectedTool === 'polygon' && currentDrawingState) {
-        onPreviewUpdate({
-          type: 'polygon',
-          data: { 
-            vertices: currentDrawingState.vertices, 
-            cursorPoint: imagePoint 
-          }
-        });
-      }
       return;
     }
 
@@ -640,6 +948,7 @@ export function Canvas({
     switch (selectedTool) {
       case 'dimension':
         if (currentDrawingState) {
+          // Dimension lines need immediate feedback for smooth drawing
           onPreviewUpdate({
             type: 'dimension',
             data: { 
@@ -650,10 +959,15 @@ export function Canvas({
         }
         break;
 
+      case 'polygon':
+        // Polygon preview is already handled above for both drawing and non-drawing states
+        break;
+
       case 'freehand':
         if (currentDrawingState) {
           const newState = ToolLogic.addFreehandPoint(currentDrawingState, imagePoint);
           setCurrentDrawingState(newState);
+          // Freehand needs immediate feedback, not throttled
           onPreviewUpdate({
             type: 'freehand',
             data: { points: newState.points }
@@ -673,6 +987,7 @@ export function Canvas({
             imagePoint, 
             currentDrawingState.archType
           );
+          // Arch preview needs immediate feedback for smooth drawing
           onPreviewUpdate({
             type: 'arch',
             data: { 
@@ -700,17 +1015,39 @@ export function Canvas({
       const imagePoint = canvasToImageCoords(canvasX, canvasY);
 
       if (currentDrawingState) {
-        // Add vertex to existing polygon
-        const newState = ToolLogic.addPolygonVertex(currentDrawingState, imagePoint);
-        setCurrentDrawingState(newState);
-        onPreviewUpdate({
-          type: 'polygon',
-          data: { vertices: newState.vertices, cursorPoint: imagePoint }
-        });
+        // Check if clicking near first vertex to close polygon
+        if (ToolLogic.isNearFirstVertex(currentDrawingState.vertices, imagePoint, 10)) {
+          // Close the polygon
+          const polygon = ToolLogic.closePolygon(currentDrawingState);
+          const annotation: DimensionMarkDomain.IAnnotation = {
+            id: `polygon_${Date.now()}`,
+            type: 'polygon',
+            data: polygon,
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+          };
+          onAnnotationCreate(annotation);
+          setCurrentDrawingState(null);
+          setIsDrawing(false);
+          onDrawingEnd();
+          onPreviewUpdate(undefined);
+        } else {
+          // Add vertex to existing polygon - keep drawing state active
+          const newState = ToolLogic.addPolygonVertex(currentDrawingState, imagePoint);
+          setCurrentDrawingState(newState);
+          // Immediately update preview with new vertex to maintain all lines
+          onPreviewUpdate({
+            type: 'polygon',
+            data: { vertices: newState.vertices, cursorPoint: imagePoint }
+          });
+        }
       } else {
         // Start new polygon
         const newState = ToolLogic.startPolygonDrawing(imagePoint);
         setCurrentDrawingState(newState);
+        setIsDrawing(true);
+        onDrawingStart();
+        // Start with initial vertex
         onPreviewUpdate({
           type: 'polygon',
           data: { vertices: [imagePoint], cursorPoint: imagePoint }
@@ -720,20 +1057,8 @@ export function Canvas({
   };
 
   const handleDoubleClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    // Complete polygon on double click
-    if (selectedTool === 'polygon' && currentDrawingState) {
-      const polygon = ToolLogic.closePolygon(currentDrawingState);
-      const annotation: DimensionMarkDomain.IAnnotation = {
-        id: `polygon_${Date.now()}`,
-        type: 'polygon',
-        data: polygon,
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-      };
-      onAnnotationCreate(annotation);
-      setCurrentDrawingState(null);
-      onPreviewUpdate(undefined);
-    }
+    // Double click is no longer used for polygon completion
+    // Polygons now close when clicking near the first vertex
   };
 
   // Touch event handlers for pinch-to-zoom
