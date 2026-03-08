@@ -59,57 +59,17 @@ site wide global header is there which shows logout button
 ### Requirement 2: Mark dimension on uploaded Imaged
 
 dimension_mark.requirements.md
-linking: after image is uploaded this page opens up
-site wide global header is there which shows logout button
+linking: after image is uploaded this page will open. This page will have a global header is there which will have two buttons - back and logout button.  
 
-
----
-
-
-
-
-**User Story:** As a user, I want to mark dimensions on the wall image, so that the system can understand the scale and proportions of the wall.
-
-#### Acceptance Criteria
-
-1. WHEN the user activates the dimension marking tool, THE Dimension_Marker SHALL display a crosshair cursor
-2. WHEN the user clicks two points on the image, THE Dimension_Marker SHALL draw a line between them with a label showing pixel distance
-3. WHEN a dimension is marked, THE Dimension_Marker SHALL allow the user to input the real-world measurement (in cm or inches) for that dimension
-4. WHEN a dimension is created, THE Dimension_Marker SHALL store the pixel distance and real-world measurement as Dimension_Data
-5. WHEN the user hovers over a marked dimension, THE Dimension_Marker SHALL highlight it and display its stored measurement
-6. WHEN the user clicks on a marked dimension, THE Dimension_Marker SHALL allow editing or deletion of that dimension
-7. WHILE dimensions are being marked, THE Image_Display SHALL remain visible and interactive
-
----
-
-### Requirement 3: Dimension Validation
-
-**User Story:** As a user, I want the system to validate my dimension markings, so that I can ensure the measurements are reasonable before generating the 3D model.
-
-#### Acceptance Criteria
-
-1. WHEN dimensions are marked, THE Dimension_Validator SHALL verify that at least one dimension is marked before allowing model generation
-2. IF a dimension measurement is zero or negative, THEN THE Dimension_Validator SHALL display an error and prevent model generation
-3. WHEN dimensions are marked, THE Dimension_Validator SHALL check that marked dimensions are consistent (e.g., width and height are proportional to the image)
-4. IF dimensions appear inconsistent, THEN THE Dimension_Validator SHALL display a warning but allow the user to proceed
 
 ---
 
 ### Requirement 4: Blender Script Generation via Gemini API
 
-**User Story:** As a user, I want the system to generate a Blender script based on my marked dimensions using Google's Gemini API, so that a 3D model can be created automatically.
+generate_3d_model.requirements.md
+linking : upon click save, skip button after image has been saved, this page will open
+upon and post response from gemini it will redirect to headless blender. Global website header will show buttons upload, dimension, model, logout
 
-#### Acceptance Criteria
-
-1. WHEN the user initiates model generation, THE LLM_Generator SHALL construct a prompt containing the Wall_Image, Dimension_Data, and generation parameters
-2. WHEN the LLM_Generator sends a request, THE LLM_Generator SHALL call the /api/gemini/generate API_Endpoint on the Backend_Server
-3. WHEN the Backend_Server receives a generation request, THE Gemini_API_Handler SHALL authenticate with Google's Gemini API using stored API credentials
-4. WHEN authenticated, THE Gemini_API_Handler SHALL send the prompt to the Gemini_API with the Wall_Image encoded as base64
-5. WHEN the Gemini_API returns a response, THE Blender_Script_Parser SHALL extract the Python code from the response
-6. IF the Gemini_API response does not contain valid Python code, THEN THE Blender_Script_Parser SHALL display an error and request regeneration
-7. WHEN a Blender_Script is generated, THE Backend_Server SHALL store the script with a unique script_id and return it to the client
-8. WHILE the Gemini_API is processing, THE UI SHALL display a loading indicator
-9. IF the Gemini_API call fails or times out, THEN THE Error_Handler SHALL display an error message and provide a retry option
 
 ---
 

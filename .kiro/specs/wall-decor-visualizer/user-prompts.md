@@ -919,3 +919,4 @@ backend should have has a bff for upload-page refactor this
 249. [2026-03-07 16:48] go back to previous implementation
 250. [2026-03-07 16:49] when drawing polygon only first dor shows, then polygon appears when it is closed nothing shows in between why ?
 251. [2026-03-07 16:50] superb ! you got it right
+252. [2026-03-07 16:51] basis linking info of dimension marking page , see if global header is created properly

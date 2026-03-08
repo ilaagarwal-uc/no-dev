@@ -39,7 +39,7 @@ This document contains all requirements related to dimension marking functionali
 
 ### Requirement 1: Image Canvas Display and Centering
 
-**User Story:** As a user, I want the uploaded wall image to be displayed in the center of the page, so that I can easily view and annotate it.
+**User Story:** As a user, I want the uploaded wall image to be displayed in the center of the page, so that I can easily view and annotate it. I want to mark dimensions on the wall image, so that the system can understand the scale and proportions of the wall.
 
 #### Acceptance Criteria
 
