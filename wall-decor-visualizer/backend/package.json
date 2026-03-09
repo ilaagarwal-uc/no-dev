@@ -5,19 +5,20 @@
   "main": "dist/server.js",
   "type": "module",
   "scripts": {
-    "dev": "node --loader ts-node/esm src/server.ts",
+    "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "vitest",
     "test:run": "vitest --run",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
-    "cleanup-indexes": "node --loader ts-node/esm scripts/cleanup-indexes.ts"
+    "cleanup-indexes": "tsx scripts/cleanup-indexes.ts"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.0.0",
     "@google/generative-ai": "^0.1.3",
     "@types/multer": "^2.0.0",
+    "@types/uuid": "^11.0.0",
     "axios": "^1.6.2",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
@@ -27,7 +28,8 @@
     "jsonwebtoken": "^9.0.0",
     "mongoose": "^8.0.0",
     "morgan": "^1.10.0",
-    "multer": "^2.1.1"
+    "multer": "^2.1.1",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

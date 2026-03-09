@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Model Generation - UI Mockup</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', sans-serif;
+            background: #f5f5f5;
+            overflow: hidden;
+        }
+
+        .model-generation-page {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: #ffffff;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background: #ffffff;
+            border-bottom: 1px solid #e0e0e0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .header-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #45a049;
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .btn-secondary:hover {
+            background: #e8e8e8;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #da190b;
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* ===== VIEWER CONTAINER ===== */
+        .viewer-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f9f9f9;
+            position: relative;
+        }
+
+        /* ===== PROGRESS SECTION ===== */
+        .progress-section {
+            padding: 2rem;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .progress-section.hidden {
+            display: none;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .progress-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .progress-percentage {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #4CAF50;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background: #e0e0e0;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50 0%, #66BB6A 100%);
+            border-radius: 6px;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent
+            );
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .progress-stage {
+            font-size: 0.9rem;
+            color: #666;
+            font-style: italic;
+        }
+
+        .progress-stages-list {
+            margin-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .stage-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
+
+        .stage-item.completed {
+            background: #e8f5e9;
+        }
+
+        .stage-item.active {
+            background: #e3f2fd;
+            border: 1px solid #2196F3;
+        }
+
+        .stage-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .stage-icon.completed {
+            color: #4CAF50;
+        }
+
+        .stage-icon.active {
+            color: #2196F3;
+        }
+
+        .stage-icon.pending {
+            color: #999;
+        }
+
+        .stage-text {
+            flex: 1;
+            font-size: 0.9rem;
+            color: #333;
+        }
+
+        .stage-item.pending .stage-text {
+            color: #999;
+        }
+
+        /* ===== 3D VIEWER ===== */
+        .viewer-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .viewer-canvas {
+            width: 100%;
+            height: 100%;
+            background: #2a2a2a;
+            position: relative;
+        }
+
+        .viewer-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            color: white;
+        }
+
+        .viewer-placeholder-icon {
+            font-size: 4rem;
+            opacity: 0.7;
+        }
+
+        .viewer-placeholder-text {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        /* ===== VIEWER CONTROLS ===== */
+        .viewer-controls {
+            position: absolute;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 0.5rem;
+        }
+
+        .viewer-controls.hidden {
+            display: none;
+        }
+
+        .control-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: #f0f0f0;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .control-btn:hover {
+            background: #e0e0e0;
+        }
+
+        .control-btn.active {
+            background: #2196F3;
+            color: white;
+        }
+
+        /* ===== VIEW MODE SELECTOR ===== */
+        .view-mode-selector {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 0.5rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .view-mode-selector.hidden {
+            display: none;
+        }
+
+        .view-mode-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid #ddd;
+            background: #f9f9f9;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .view-mode-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .view-mode-btn.active {
+            background: #2196F3;
+            color: white;
+            border-color: #2196F3;
+        }
+
+        /* ===== MODEL INFO PANEL ===== */
+        .model-info-panel {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 1rem;
+            min-width: 200px;
+        }
+
+        .model-info-panel.hidden {
+            display: none;
+        }
+
+        .info-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .info-label {
+            color: #666;
+        }
+
+        .info-value {
+            color: #333;
+            font-weight: 500;
+        }
+
+        /* ===== ERROR STATE ===== */
+        .error-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .error-container.visible {
+            display: flex;
+        }
+
+        .error-icon {
+            font-size: 4rem;
+            color: #f44336;
+            margin-bottom: 1rem;
+        }
+
+        .error-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .error-message {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 1.5rem;
+            max-width: 500px;
+        }
+
+        .error-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        /* ===== LOADING SPINNER ===== */
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .header {
+                padding: 0.75rem 1rem;
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
+
+            .header-title {
+                font-size: 1rem;
+            }
+
+            .progress-section {
+                padding: 1rem;
+            }
+
+            .viewer-controls {
+                bottom: 1rem;
+                right: 1rem;
+            }
+
+            .view-mode-selector {
+                top: 1rem;
+                left: 1rem;
+            }
+
+            .model-info-panel {
+                top: 1rem;
+                right: 1rem;
+                min-width: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="model-generation-page">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-title">3D Model Generation</div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                <button class="btn btn-danger" id="retryBtn" style="display: none;">Retry</button>
+                <button class="btn btn-primary" id="downloadBtn" disabled>Download Model</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="viewer-container">
+                <!-- Progress Section -->
+                <div class="progress-section" id="progressSection">
+                    <div class="progress-header">
+                        <div class="progress-title">Generating 3D Model</div>
+                        <div class="progress-percentage" id="progressPercentage">0%</div>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-stage" id="progressStage">Initializing...</div>
+
+                    <!-- Progress Stages List -->
+                    <div class="progress-stages-list">
+                        <div class="stage-item active" id="stage1">
+                            <div class="stage-icon active">⏳</div>
+                            <div class="stage-text">Validating dimension data</div>
+                        </div>
+                        <div class="stage-item pending" id="stage2">
+                            <div class="stage-icon pending">⏳</div>
+                            <div class="stage-text">Generating Blender script with Gemini AI</div>
+                        </div>
+                        <div class="stage-item pending" id="stage3">
+                            <div class="stage-icon pending">⏳</div>
+                            <div class="stage-text">Executing Blender script</div>
+                        </div>
+                        <div class="stage-item pending" id="stage4">
+                            <div class="stage-icon pending">⏳</div>
+                            <div class="stage-text">Exporting glTF model</div>
+                        </div>
+                        <div class="stage-item pending" id="stage5">
+                            <div class="stage-icon pending">⏳</div>
+                            <div class="stage-text">Uploading to cloud storage</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3D Viewer -->
+                <div class="viewer-wrapper">
+                    <div class="viewer-canvas" id="viewerCanvas">
+                        <div class="viewer-placeholder">
+                            <div class="spinner"></div>
+                            <div class="viewer-placeholder-text">Generating your 3D model...</div>
+                        </div>
+                    </div>
+
+                    <!-- View Mode Selector -->
+                    <div class="view-mode-selector hidden" id="viewModeSelector">
+                        <button class="view-mode-btn active" data-mode="perspective">Perspective</button>
+                        <button class="view-mode-btn" data-mode="orthographic">Orthographic</button>
+                        <button class="view-mode-btn" data-mode="wireframe">Wireframe</button>
+                    </div>
+
+                    <!-- Viewer Controls -->
+                    <div class="viewer-controls hidden" id="viewerControls">
+                        <button class="control-btn" title="Zoom In" id="zoomInBtn">+</button>
+                        <button class="control-btn" title="Reset View" id="resetViewBtn">⟲</button>
+                        <button class="control-btn" title="Zoom Out" id="zoomOutBtn">−</button>
+                        <button class="control-btn" title="Toggle Fullscreen" id="fullscreenBtn">⛶</button>
+                    </div>
+
+                    <!-- Model Info Panel -->
+                    <div class="model-info-panel hidden" id="modelInfoPanel">
+                        <div class="info-title">Model Information</div>
+                        <div class="info-item">
+                            <span class="info-label">Vertices:</span>
+                            <span class="info-value" id="vertexCount">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Faces:</span>
+                            <span class="info-value" id="faceCount">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">File Size:</span>
+                            <span class="info-value" id="fileSize">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Format:</span>
+                            <span class="info-value">glTF 2.0</span>
+                        </div>
+                    </div>
+
+                    <!-- Error Container -->
+                    <div class="error-container" id="errorContainer">
+                        <div class="error-icon">⚠️</div>
+                        <div class="error-title">Generation Failed</div>
+                        <div class="error-message" id="errorMessage">
+                            An error occurred while generating your 3D model. Please try again.
+                        </div>
+                        <div class="error-actions">
+                            <button class="btn btn-secondary" onclick="goBack()">Go Back</button>
+                            <button class="btn btn-danger" onclick="retryGeneration()">Retry</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simulate progress updates
+        let progress = 0;
+        let currentStage = 1;
+        const stages = [
+            { id: 1, text: 'Validating dimension data', duration: 500 },
+            { id: 2, text: 'Generating Blender script with Gemini AI', duration: 2000 },
+            { id: 3, text: 'Executing Blender script', duration: 3000 },
+            { id: 4, text: 'Exporting glTF model', duration: 1500 },
+            { id: 5, text: 'Uploading to cloud storage', duration: 1000 }
+        ];
+
+        function updateProgress(newProgress, stage) {
+            progress = newProgress;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('progressPercentage').textContent = Math.round(progress) + '%';
+            
+            if (stage) {
+                document.getElementById('progressStage').textContent = stage;
+            }
+        }
+
+        function updateStage(stageId, status) {
+            const stageElement = document.getElementById('stage' + stageId);
+            const icon = stageElement.querySelector('.stage-icon');
+            
+            stageElement.classList.remove('active', 'completed', 'pending');
+            icon.classList.remove('active', 'completed', 'pending');
+            
+            if (status === 'active') {
+                stageElement.classList.add('active');
+                icon.classList.add('active');
+                icon.textContent = '⏳';
+            } else if (status === 'completed') {
+                stageElement.classList.add('completed');
+                icon.classList.add('completed');
+                icon.textContent = '✓';
+            } else {
+                stageElement.classList.add('pending');
+                icon.classList.add('pending');
+                icon.textContent = '⏳';
+            }
+        }
+
+        function simulateGeneration() {
+            let totalDuration = 0;
+            let currentProgress = 0;
+
+            stages.forEach((stage, index) => {
+                setTimeout(() => {
+                    // Mark previous stage as completed
+                    if (index > 0) {
+                        updateStage(index, 'completed');
+                    }
+                    
+                    // Mark current stage as active
+                    updateStage(index + 1, 'active');
+                    
+                    // Update progress
+                    const progressIncrement = 100 / stages.length;
+                    currentProgress = (index + 1) * progressIncrement;
+                    updateProgress(currentProgress, stage.text);
+                    
+                    // If last stage, complete generation
+                    if (index === stages.length - 1) {
+                        setTimeout(() => {
+                            completeGeneration();
+                        }, stage.duration);
+                    }
+                }, totalDuration);
+                
+                totalDuration += stage.duration;
+            });
+        }
+
+        function completeGeneration() {
+            updateStage(5, 'completed');
+            updateProgress(100, 'Generation complete!');
+            
+            // Hide progress section
+            setTimeout(() => {
+                document.getElementById('progressSection').classList.add('hidden');
+                
+                // Show 3D viewer
+                showViewer();
+            }, 1000);
+        }
+
+        function showViewer() {
+            // Replace placeholder with 3D model visualization
+            const canvas = document.getElementById('viewerCanvas');
+            canvas.innerHTML = `
+                <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem;">
+                    🏠 3D Model Viewer
+                    <br><small style="font-size: 1rem; opacity: 0.7;">Interactive 3D model would render here</small>
+                </div>
+            `;
+            
+            // Show controls
+            document.getElementById('viewerControls').classList.remove('hidden');
+            document.getElementById('viewModeSelector').classList.remove('hidden');
+            document.getElementById('modelInfoPanel').classList.remove('hidden');
+            
+            // Enable download button
+            document.getElementById('downloadBtn').disabled = false;
+            
+            // Update model info
+            document.getElementById('vertexCount').textContent = '1,234';
+            document.getElementById('faceCount').textContent = '2,468';
+            document.getElementById('fileSize').textContent = '1.2 MB';
+        }
+
+        function showError(message) {
+            document.getElementById('progressSection').classList.add('hidden');
+            document.getElementById('errorContainer').classList.add('visible');
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('retryBtn').style.display = 'inline-block';
+        }
+
+        function retryGeneration() {
+            document.getElementById('errorContainer').classList.remove('visible');
+            document.getElementById('progressSection').classList.remove('hidden');
+            document.getElementById('retryBtn').style.display = 'none';
+            
+            // Reset progress
+            progress = 0;
+            currentStage = 1;
+            updateProgress(0, 'Initializing...');
+            
+            // Reset stages
+            for (let i = 1; i <= 5; i++) {
+                updateStage(i, 'pending');
+            }
+            
+            // Restart simulation
+            simulateGeneration();
+        }
+
+        function goBack() {
+            window.history.back();
+        }
+
+        // View mode selector
+        document.querySelectorAll('.view-mode-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.view-mode-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Control buttons
+        document.getElementById('zoomInBtn').addEventListener('click', () => {
+            console.log('Zoom in');
+        });
+
+        document.getElementById('zoomOutBtn').addEventListener('click', () => {
+            console.log('Zoom out');
+        });
+
+        document.getElementById('resetViewBtn').addEventListener('click', () => {
+            console.log('Reset view');
+        });
+
+        document.getElementById('fullscreenBtn').addEventListener('click', () => {
+            const canvas = document.getElementById('viewerCanvas');
+            if (canvas.requestFullscreen) {
+                canvas.requestFullscreen();
+            }
+        });
+
+        document.getElementById('cancelBtn').addEventListener('click', () => {
+            if (confirm('Are you sure you want to cancel the generation?')) {
+                goBack();
+            }
+        });
+
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            alert('Downloading model...');
+        });
+
+        // Start simulation on page load
+        setTimeout(() => {
+            simulateGeneration();
+        }, 500);
+
+        // Uncomment to test error state
+        // setTimeout(() => {
+        //     showError('Failed to generate Blender script. The Gemini API returned an invalid response.');
+        // }, 3000);
+    </script>
+</body>
+</html>

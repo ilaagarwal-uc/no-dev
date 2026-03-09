@@ -2,9 +2,10 @@ SYSTEM_PROMPT = "You are a Senior BIM (Building Information Modeling) Engineer. 
 
 # PROMPT_STEP_1_DIMENSIONS = """TASK Analyze the provided images to reconstruct the structural 'Skeleton' of the wall... [Truncated for brevity, paste your exact prompt text here] ... REQUIRED EXAMPLE JSON OUTPUT FORMAT { ... }"""
 
+
 PROMPT_STEP_1_DIMENSIONS = (
     'Analyze the provided images to reconstruct the structural "Skeleton" of the wall. '
-    "Ignore all furniture, lights and artwork. Focus ONLY on: "
+    "Ignore all furniture, lights and artwork. Mirrors, Focus ONLY on: "
     "Only consider the area marked on the image, nothing to be considered beyond the marked area. "
     "The Main Wall boundaries (Outer dimensions). "
     "The Return Wall boundaries (Outer dimensions). "
@@ -13,13 +14,11 @@ PROMPT_STEP_1_DIMENSIONS = (
     "Door openings, Arched openings, Windows boundaries. "
     "If Window and Door dimensions are mentioned, always take the mentioned dimensions. "
     "Structural Protrusions (Beams at ceiling, Columns, Return walls). "
-    "Beam is mentioned as 'P' its depth is mentioned after it, "
+    "Beam is mentioned as 'B' its depth is mentioned after it, "
     "Column/Pillar is mentioned as 'P ' and its depth is mentioned after it. "
-    'If "B"/"P" are not mentioned then don\'t consider the beam/column wall. '
-    "Structural Niches are depth in wall but not opening in wall"
-    "Structural Niches are mentioned a N followed by depth in inches inside of the wall"
+    "If "B"/"P" are not mentioned then don\'t consider the beam/column wall. "
+    "The main and return wall can host/have Beam, column, door, arch, window, Niche. "
     "The main and return wall can host/have Beam, column, door, arch, window, niche "
-    "Cutouts are marked as X is a cutout/opening in the wall, which can have option depth for wall depth"
     'Switch boards are marked by area and are mentioned as "S". '
     'If "S" is not mentioned then don\'t consider the switch board. '
     "Switch board, MCB Box, AC are hosted on structural elements (main wall, return wall, beam, column) "
@@ -88,4 +87,3 @@ PROMPT_STEP_1_DIMENSIONS = (
 )
 
 
-#PROMPT_STEP_2_BLENDER = """ Generate a python runnable blender script to create a 3D model from JSON and image provided"

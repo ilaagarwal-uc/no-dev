@@ -253,7 +253,7 @@ This document contains all requirements related to dimension marking functionali
 #### Acceptance Criteria
 
 1. WHEN the dimension marking page loads, THE UI SHALL display "Save Dimensions" and "Skip" buttons in the top-right corner
-2. WHEN the user clicks "Save Dimensions", THE system SHALL create all merge all annotaions and markings and original image - rasterize in jpeg and save the image in users device automatically. Also move to next page where this image will be used. 
+2. WHEN the user clicks "Save Dimensions", THE system SHALL create all merge all annotaions and markings and original image - rasterize in jpeg and save the image in users device automatically. call_it wall_image_timestamp Also pass this image to the next page
 4. THE system SHALL redirect the user to the next step (3D model generation)
 5. WHEN the user clicks "Skip", THE system SHALL use the input image only , ignore all markings / annotaion and just use the original uploaded image to move to next page where image will be used
 6. THE system SHALL redirect the user to the next step (3D model generation)

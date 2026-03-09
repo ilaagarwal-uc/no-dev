@@ -4,6 +4,10 @@ import { LoginPage } from './page-service/domain/login-page/login_page';
 import { Dashboard } from './page-service/domain/dashboard/Dashboard';
 import { UploadPage } from './page-service/domain/upload-page/UploadPage';
 import { DimensionMarkPage } from './page-service/domain/dimension-mark-page/dimension_mark_page';
+import { ModelGenerationPage } from './page-service/domain/model-generation-page/ModelGenerationPage';
+import { SharedLookPage } from './page-service/domain/shared-look-page/SharedLookPage';
+import { CreateLookPage } from './page-service/domain/create-look-page';
+import { LooksListPage } from './page-service/domain/looks-list-page/LooksListPage';
 import { getAuthToken, isTokenExpired, clearAuthToken } from './data-service/domain/auth';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -61,6 +65,14 @@ function App() {
           }
         />
         <Route
+          path="/model-generation"
+          element={
+            <ProtectedRoute>
+              <ModelGenerationPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/dashboard"
           element={
             <ProtectedRoute>
@@ -68,6 +80,24 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/create-look/:baseModelId"
+          element={
+            <ProtectedRoute>
+              <CreateLookPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/looks"
+          element={
+            <ProtectedRoute>
+              <LooksListPage />
+            </ProtectedRoute>
+          }
+        />
+        {/* Public route for shared looks - no authentication required */}
+        <Route path="/shared-look/:shareLink" element={<SharedLookPage />} />
         <Route path="/" element={<Navigate to="/login" />} />
       </Routes>
     </BrowserRouter>

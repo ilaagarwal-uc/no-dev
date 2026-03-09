@@ -108,3 +108,38 @@ export class ForbiddenError extends Error {
     this.name = 'ForbiddenError';
   }
 }
+
+export class ModelGenerationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ModelGenerationError';
+  }
+}
+
+export class GeminiAPIError extends ModelGenerationError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'GeminiAPIError';
+  }
+}
+
+export class BlenderExecutionError extends ModelGenerationError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'BlenderExecutionError';
+  }
+}
+
+export class JobQueueError extends ModelGenerationError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'JobQueueError';
+  }
+}
+
+export class ModelStorageError extends ModelGenerationError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ModelStorageError';
+  }
+}

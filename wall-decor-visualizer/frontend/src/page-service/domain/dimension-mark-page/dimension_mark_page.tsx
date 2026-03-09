@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import * as DimensionMarkDomain from '../../../data-service/domain/dimension-mark/index';
 import * as DimensionMarkLogic from './dimension_mark_logic';
 import { Canvas } from './canvas';
@@ -7,7 +8,10 @@ import { ZoomControls } from './zoom_controls';
 import { ToolPanel } from './tool_panel';
 import { SaveSkipButtons } from './save_skip_buttons';
 import { UndoRedoButtons } from './undo_redo_buttons';
+import { GlobalHeader } from './global_header';
 import { IDimensionMarkPageState, IPreviewData, ToolType } from './interface';
+import { getAuthToken, getUserId, clearAuthToken } from '../../../data-service/domain/auth';
+import { logoutUser } from '../../application/upload';
 import styles from './dimension_mark_page.module.css';
 
 interface IDimensionMarkPageProps {
@@ -18,6 +22,12 @@ interface IDimensionMarkPageProps {
   onSkip?: () => void;
 }
 
+interface IDecodedToken {
+  userId: string;
+  phoneNumber: string;
+  exp: number;
+}
+
 export function DimensionMarkPage({
   imageUrl,
   imageWidth,
@@ -25,11 +35,76 @@ export function DimensionMarkPage({
   onSave,
   onSkip
 }: IDimensionMarkPageProps): JSX.Element {
+  const navigate = useNavigate();
   const [state, setState] = useState<IDimensionMarkPageState>(() =>
     DimensionMarkLogic.initializeDimensionMarkPage(imageUrl, imageWidth, imageHeight)
   );
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
+
+  // Verify authentication and get user info
+  useEffect(() => {
+    const token = getAuthToken();
+    const storedUserId = getUserId();
+
+    if (!token || !storedUserId) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      const decoded = decodeToken(token);
+      if (!decoded || isTokenExpired(decoded)) {
+        clearAuthToken();
+        navigate('/login');
+        return;
+      }
+
+      setUserId(decoded.userId);
+      setPhoneNumber(decoded.phoneNumber);
+    } catch (error) {
+      console.error('DimensionMarkPage: Error during authentication check', error);
+      clearAuthToken();
+      navigate('/login');
+    }
+  }, [navigate]);
+
+  const decodeToken = (token: string): IDecodedToken | null => {
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) return null;
+      
+      const payload = JSON.parse(atob(parts[1]));
+      if (!payload.userId || !payload.phoneNumber) return null;
+      
+      return {
+        userId: payload.userId,
+        phoneNumber: payload.phoneNumber,
+        exp: payload.exp
+      };
+    } catch (error) {
+      return null;
+    }
+  };
+
+  const isTokenExpired = (decoded: IDecodedToken): boolean => {
+    const expiresAt = decoded.exp * 1000;
+    const now = Date.now();
+    return now > expiresAt;
+  };
+
+  const handleLogout = async (): Promise<void> => {
+    try {
+      await logoutUser();
+    } catch (error) {
+      // Continue with logout even if API fails
+    } finally {
+      clearAuthToken();
+      navigate('/login');
+    }
+  };
 
   // Set canvas size
   useEffect(() => {
@@ -113,13 +188,17 @@ export function DimensionMarkPage({
       canvas.width = imageWidth;
       canvas.height = imageHeight;
       const ctx = canvas.getContext('2d');
-      if (!ctx) return;
+      if (!ctx) {
+        setIsLoading(false);
+        return;
+      }
 
       // Load and draw original image
       const img = new Image();
       img.src = imageUrl;
-      await new Promise(resolve => {
+      await new Promise((resolve, reject) => {
         img.onload = resolve;
+        img.onerror = reject;
       });
       ctx.drawImage(img, 0, 0);
 
@@ -130,10 +209,55 @@ export function DimensionMarkPage({
 
       // Convert to blob
       canvas.toBlob(blob => {
-        if (blob && onSave) {
-          onSave(state.annotations, blob);
+        if (blob) {
+          // Generate filename with timestamp
+          const timestamp = new Date().getTime();
+          const filename = `wall_image_${timestamp}.jpg`;
+          
+          // Download the merged image to user's device
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          
+          // Store the merged image URL for next page
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64data = reader.result as string;
+            sessionStorage.setItem('mergedImageData', JSON.stringify({
+              imageUrl: base64data,
+              imageWidth: imageWidth,
+              imageHeight: imageHeight,
+              filename: filename,
+              hasAnnotations: true
+            }));
+            
+            // Call onSave callback if provided
+            if (onSave) {
+              onSave(state.annotations, blob);
+            }
+            
+            setIsLoading(false);
+            
+            // Navigate to 3D model generation page with dimension data
+            const imageId = sessionStorage.getItem('uploadedImageId') || '';
+            navigate('/model-generation', {
+              state: {
+                dimensionData: state.annotations,
+                imageUrl: imageUrl, // Use original image URL, not base64
+                imageId: imageId
+              }
+            });
+          };
+          reader.readAsDataURL(blob);
+        } else {
+          console.error('Failed to create blob');
+          setIsLoading(false);
         }
-        setIsLoading(false);
       }, 'image/jpeg', 0.95);
     } catch (error) {
       console.error('Save failed:', error);
@@ -142,13 +266,42 @@ export function DimensionMarkPage({
   };
 
   const handleSkip = () => {
+    // Use original image only, ignore all markings/annotations
+    // Store original image data for next page
+    sessionStorage.setItem('mergedImageData', JSON.stringify({
+      imageUrl: imageUrl,
+      imageWidth: imageWidth,
+      imageHeight: imageHeight,
+      filename: 'original_image.jpg',
+      hasAnnotations: false
+    }));
+    
+    // Call onSkip callback if provided
     if (onSkip) {
       onSkip();
     }
+    
+    // Navigate to 3D model generation page with empty dimension data
+    const imageId = sessionStorage.getItem('uploadedImageId') || '';
+    navigate('/model-generation', {
+      state: {
+        dimensionData: [], // Empty annotations when skipped
+        imageUrl: imageUrl, // Use original image URL
+        imageId: imageId
+      }
+    });
   };
 
   return (
     <div className={styles.pageContainer}>
+      {userId && phoneNumber && (
+        <GlobalHeader
+          userId={userId}
+          phoneNumber={phoneNumber}
+          onLogout={handleLogout}
+        />
+      )}
+      
       <div className={styles.topControls}>
         <div className={styles.zoomControlsArea}>
           <ZoomControls zoomLevel={state.zoomLevel} onZoomIn={handleZoomIn} onZoomOut={handleZoomOut} />
@@ -225,10 +378,31 @@ function drawAnnotationOnCanvas(ctx: CanvasRenderingContext2D, annotation: Dimen
     const dimension = annotation.data as DimensionMarkDomain.IDimension;
     ctx.strokeStyle = dimension.color;
     ctx.lineWidth = 2;
+    
+    // Draw the main line
     ctx.beginPath();
     ctx.moveTo(dimension.startPoint.x, dimension.startPoint.y);
     ctx.lineTo(dimension.endPoint.x, dimension.endPoint.y);
     ctx.stroke();
+    
+    // Draw arrow heads
+    const arrowSize = dimension.arrowHeadSize;
+    drawArrowHeadOnCanvas(
+      ctx,
+      dimension.startPoint.x,
+      dimension.startPoint.y,
+      dimension.endPoint.x,
+      dimension.endPoint.y,
+      arrowSize
+    );
+    drawArrowHeadOnCanvas(
+      ctx,
+      dimension.endPoint.x,
+      dimension.endPoint.y,
+      dimension.startPoint.x,
+      dimension.startPoint.y,
+      arrowSize
+    );
   } else if (annotation.type === 'freehand') {
     const freehand = annotation.data as DimensionMarkDomain.IFreehand;
     ctx.strokeStyle = freehand.color;
@@ -291,4 +465,24 @@ function drawAnnotationOnCanvas(ctx: CanvasRenderingContext2D, annotation: Dimen
     ctx.lineTo(corner.point.x + corner.size, corner.point.y);
     ctx.stroke();
   }
+}
+
+function drawArrowHeadOnCanvas(
+  ctx: CanvasRenderingContext2D,
+  fromX: number,
+  fromY: number,
+  toX: number,
+  toY: number,
+  size: number
+): void {
+  const angle = Math.atan2(toY - fromY, toX - fromX);
+  const openAngle = (50 * Math.PI) / 180; // 50 degrees
+
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(fromX - Math.cos(angle - openAngle / 2) * size, fromY - Math.sin(angle - openAngle / 2) * size);
+  ctx.lineTo(fromX, fromY);
+  ctx.lineTo(fromX - Math.cos(angle + openAngle / 2) * size, fromY - Math.sin(angle + openAngle / 2) * size);
+  ctx.stroke();
 }

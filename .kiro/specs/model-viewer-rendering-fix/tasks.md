@@ -1,0 +1,118 @@
+# Implementation Plan
+
+- [x] 1. Write bug condition exploration test
+  - **Property 1: Fault Condition** - Three.js Rendering Not Initialized
+  - **CRITICAL**: This test MUST FAIL on unfixed code - failure confirms the bug exists
+  - **DO NOT attempt to fix the test or the code when it fails**
+  - **NOTE**: This test encodes the expected behavior - it will validate the fix when it passes after implementation
+  - **GOAL**: Surface counterexamples that demonstrate the bug exists
+  - **Scoped PBT Approach**: Scope the property to concrete failing cases - valid modelUrl provided but Three.js not initialized
+  - Test that when ModelViewer receives a valid modelUrl, it initializes Three.js (scene, camera, renderer), loads the GLB model, and renders a canvas element
+  - The test assertions should verify:
+    - Canvas element exists in the DOM
+    - Three.js scene is initialized
+    - GLTFLoader is called with the modelUrl
+    - OrbitControls are enabled
+    - No placeholder text is displayed
+  - Run test on UNFIXED code
+  - **EXPECTED OUTCOME**: Test FAILS (this is correct - it proves the bug exists)
+  - Document counterexamples found:
+    - Placeholder div with text "Note: Three.js integration will be completed in the next phase" is rendered
+    - No canvas element exists in the DOM
+    - Three.js is not initialized (no scene, camera, or renderer)
+    - Control buttons only log to console without performing visual operations
+  - Mark task complete when test is written, run, and failure is documented
+  - _Requirements: 2.1, 2.11_
+
+- [x] 2. Write preservation property tests (BEFORE implementing fix)
+  - **Property 2: Preservation** - UI Components Display Unchanged
+  - **IMPORTANT**: Follow observation-first methodology
+  - Observe behavior on UNFIXED code for UI component rendering:
+    - ViewModeSelector displays three buttons (Perspective, Orthographic, Wireframe) with active state styling
+    - ViewerControls displays four buttons (Zoom In, Zoom Out, Reset, Fullscreen) with proper icons
+    - ModelInfoPanel displays vertex count, face count, and file size
+    - Component accepts modelUrl as a prop
+    - Component layout and CSS classes are preserved
+  - Write property-based tests capturing observed UI component behavior patterns:
+    - For all modelUrl inputs, ViewModeSelector continues to display correctly
+    - For all modelUrl inputs, ViewerControls continues to display correctly
+    - For all modelUrl inputs, ModelInfoPanel continues to display correctly
+    - For all modelUrl inputs, component prop interface remains unchanged
+  - Property-based testing generates many test cases for stronger guarantees
+  - Run tests on UNFIXED code
+  - **EXPECTED OUTCOME**: Tests PASS (this confirms baseline behavior to preserve)
+  - Mark task complete when tests are written, run, and passing on unfixed code
+  - _Requirements: 3.1, 3.2, 3.3_
+
+- [ ] 3. Fix for Model Viewer Rendering
+
+  - [x] 3.1 Implement Three.js initialization and GLB loading
+    - Add Three.js refs (scene, camera, renderer, controls, animationFrame)
+    - Initialize Three.js scene with background color
+    - Create PerspectiveCamera with FOV 75, aspect ratio, near 0.1, far 1000
+    - Position camera at (0, 0, 5)
+    - Create WebGLRenderer with antialias, attach to canvas container
+    - Add AmbientLight (intensity 0.5) and DirectionalLight (intensity 0.8, position 5,5,5)
+    - Create OrbitControls attached to camera and renderer
+    - Start animation loop with requestAnimationFrame
+    - Use GLTFLoader to load model from modelUrl
+    - Calculate model bounding box and center the model in scene
+    - Extract vertex count and face count from loaded model
+    - Update modelInfo state with actual values
+    - Handle loading errors and display error message
+    - Add cleanup logic: cancel animation frame, dispose resources, remove renderer
+    - Replace placeholder div with canvas container div
+    - _Bug_Condition: isBugCondition(input) where input.modelUrl is valid and not empty_
+    - _Expected_Behavior: threeJsInitialized(result) AND canvasElementExists(result) AND modelLoaded(result)_
+    - _Preservation: ViewModeSelector, ViewerControls, and ModelInfoPanel continue to display with unchanged layout and styling_
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 2.10, 2.11_
+
+  - [x] 3.2 Implement view mode switching
+    - For 'perspective' mode: Use PerspectiveCamera (default)
+    - For 'orthographic' mode: Create OrthographicCamera with proper frustum based on scene bounds
+    - For 'wireframe' mode: Traverse scene and set material.wireframe = true on all meshes
+    - Update camera when viewMode state changes
+    - _Bug_Condition: isBugCondition(input) where viewMode is changed_
+    - _Expected_Behavior: Camera type or material properties update correctly based on viewMode_
+    - _Preservation: ViewModeSelector continues to display three buttons with active state_
+    - _Requirements: 2.12_
+
+  - [x] 3.3 Implement viewer controls functionality
+    - Zoom In: Animate camera position closer to target (reduce distance by 20%)
+    - Zoom Out: Animate camera position farther from target (increase distance by 20%)
+    - Reset View: Restore camera to initial position (0, 0, 5) and rotation
+    - Fullscreen: Use Fullscreen API to toggle fullscreen mode on canvas container
+    - Replace console.log statements with actual Three.js operations
+    - _Bug_Condition: isBugCondition(input) where control buttons are clicked_
+    - _Expected_Behavior: Camera position/state updates correctly, visual changes occur_
+    - _Preservation: ViewerControls continues to display four buttons with correct icons_
+    - _Requirements: 2.13, 2.14, 2.15, 2.16_
+
+  - [x] 3.4 Verify bug condition exploration test now passes
+    - **Property 1: Expected Behavior** - Three.js Rendering Initialized
+    - **IMPORTANT**: Re-run the SAME test from task 1 - do NOT write a new test
+    - The test from task 1 encodes the expected behavior
+    - When this test passes, it confirms the expected behavior is satisfied
+    - Run bug condition exploration test from step 1
+    - **EXPECTED OUTCOME**: Test PASSES (confirms bug is fixed)
+    - Verify:
+      - Canvas element exists in the DOM
+      - Three.js scene is initialized
+      - GLTFLoader loads the model
+      - OrbitControls are enabled
+      - No placeholder text is displayed
+    - _Requirements: 2.1, 2.11_
+
+  - [x] 3.5 Verify preservation tests still pass
+    - **Property 2: Preservation** - UI Components Display Unchanged
+    - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
+    - Run preservation property tests from step 2
+    - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
+    - Confirm all UI components still render correctly:
+      - ViewModeSelector displays correctly
+      - ViewerControls displays correctly
+      - ModelInfoPanel displays correctly
+      - Component layout and styling unchanged
+
+- [x] 4. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.

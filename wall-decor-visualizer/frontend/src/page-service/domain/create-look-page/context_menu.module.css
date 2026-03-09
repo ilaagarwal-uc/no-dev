@@ -1,0 +1,158 @@
+/* Context Menu Styles */
+
+.contextMenu {
+  position: fixed;
+  z-index: 10000;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  padding: 4px;
+  min-width: 200px;
+  animation: contextMenuFadeIn 0.15s ease-out;
+}
+
+@keyframes contextMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 44px; /* 44x44px minimum touch target */
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  color: #333333;
+  font-size: 16px; /* Minimum 16px for readability */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+  gap: 12px;
+}
+
+.menuItem:hover {
+  background-color: #f5f5f5;
+}
+
+.menuItem:active {
+  background-color: #e8e8e8;
+}
+
+.menuItem:focus {
+  outline: 3px solid #0066cc; /* 3px focus indicator */
+  outline-offset: 2px;
+}
+
+.menuItem.active {
+  background-color: #e3f2fd;
+  color: #0066cc;
+}
+
+.menuIcon {
+  font-size: 20px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.menuText {
+  flex: 1;
+  white-space: nowrap;
+}
+
+.menuDivider {
+  height: 1px;
+  background-color: #e0e0e0;
+  margin: 4px 8px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .contextMenu {
+    border: 2px solid #000000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .menuItem {
+    border: 1px solid transparent;
+  }
+
+  .menuItem:hover {
+    background-color: #000000;
+    color: #ffffff;
+    border-color: #ffffff;
+  }
+
+  .menuItem:focus {
+    outline: 4px solid #000000; /* Thicker outline in high contrast */
+    outline-offset: 2px;
+  }
+
+  .menuDivider {
+    height: 2px;
+    background-color: #000000;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .contextMenu {
+    background: #2c2c2c;
+    border-color: #444444;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  }
+
+  .menuItem {
+    color: #e0e0e0;
+  }
+
+  .menuItem:hover {
+    background-color: #3a3a3a;
+  }
+
+  .menuItem:active {
+    background-color: #444444;
+  }
+
+  .menuItem.active {
+    background-color: #1e3a5f;
+    color: #64b5f6;
+  }
+
+  .menuDivider {
+    background-color: #444444;
+  }
+}
+
+/* Ensure touch targets are adequate on mobile */
+@media (pointer: coarse) {
+  .menuItem {
+    min-height: 48px; /* Slightly larger for touch devices */
+    padding: 12px 14px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .contextMenu {
+    animation: none;
+  }
+
+  .menuItem {
+    transition: none;
+  }
+}

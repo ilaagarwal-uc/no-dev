@@ -1,5 +1,5 @@
 {
-  "enabled": true,
+  "enabled": false,
   "name": "Auto-log User Prompts",
   "description": "Automatically logs all user prompts to user-prompts.md file , if it s significant and not like yes or now, also add small context for that prompt \n\n## Prompt Logging Instruction\n\n**IMPORTANT: Every time the user writes a prompt in this project, you MUST append it to `.kiro/specs/wall-decor-visualizer/user-prompts.md`**\n\n### How to Log Prompts\n\n1. After the user submits a prompt, add it to the user-prompts.md file\n2. Format:\n   - Add a new section with the prompt number (increment from previous)\n   - Include the exact prompt text as written by the user\n   - Add timestamp if relevant\n   - Add any context or related requirements\n   - Keep the summary section updated\n\n3. Example format:\n```markdown\n**Prompt [N]:**\n> [exact user prompt text]\n\n**Context:** [any relevant context]\n**Related to:** [which feature/requirement]",
   "version": "1",

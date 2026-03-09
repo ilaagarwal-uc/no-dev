@@ -45,6 +45,7 @@ export function GlobalHeader({ userId, phoneNumber, onLogout }: IGlobalHeaderPro
 
         <nav className={styles.headerCenter} aria-label="Main navigation">
           <a href="#home">Home</a>
+          <a href="/looks">My Looks</a>
           <a href="#gallery">Gallery</a>
         </nav>
 

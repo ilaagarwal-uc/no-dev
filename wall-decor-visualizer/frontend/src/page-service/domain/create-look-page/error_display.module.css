@@ -1,0 +1,158 @@
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background-color: #f9f7f4;
+  padding: 20px;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  max-width: 600px;
+  padding: 40px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.iconContainer {
+  color: #f44336;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0;
+  text-align: center;
+}
+
+.message {
+  font-size: 16px;
+  color: #666;
+  text-align: center;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.suggestions {
+  width: 100%;
+  background-color: #f5f5f5;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.suggestionsTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 12px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.suggestionsList {
+  margin: 0;
+  padding-left: 20px;
+  list-style-type: disc;
+}
+
+.suggestionItem {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.8;
+  margin-bottom: 8px;
+}
+
+.suggestionItem:last-child {
+  margin-bottom: 0;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.retryButton,
+.homeButton {
+  flex: 1;
+  min-height: 44px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.retryButton {
+  background-color: #2196f3;
+  color: white;
+}
+
+.retryButton:hover:not(:disabled) {
+  background-color: #1976d2;
+}
+
+.retryButton:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.retryButton:disabled {
+  background-color: #e0e0e0;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.homeButton {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.homeButton:hover {
+  background-color: #e8e8e8;
+}
+
+.homeButton:active {
+  transform: scale(0.98);
+}
+
+.helpText {
+  font-size: 14px;
+  color: #999;
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .content {
+    padding: 24px;
+  }
+
+  .title {
+    font-size: 20px;
+  }
+
+  .message {
+    font-size: 14px;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+}

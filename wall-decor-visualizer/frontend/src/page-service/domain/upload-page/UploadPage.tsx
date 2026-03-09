@@ -147,6 +147,7 @@ export function UploadPage(): JSX.Element {
       };
       console.log('handleUploadSuccess: Storing image data', imageData);
       sessionStorage.setItem('uploadedImageData', JSON.stringify(imageData));
+      sessionStorage.setItem('uploadedImageId', extractedImageId);
       
       // Redirect to dimension marking page
       navigate('/dimension-mark');
@@ -161,6 +162,7 @@ export function UploadPage(): JSX.Element {
       };
       console.log('handleUploadSuccess: Storing image data (fallback)', imageData);
       sessionStorage.setItem('uploadedImageData', JSON.stringify(imageData));
+      sessionStorage.setItem('uploadedImageId', extractedImageId);
       navigate('/dimension-mark');
     };
     img.src = gcpUrl;
