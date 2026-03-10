@@ -1,27 +1,24 @@
-SYSTEM_PROMPT = "You are a Senior BIM (Building Information Modeling) Engineer. Your output must be valid JSON and runnable blendor python script, strictly following the defined schema."
-
-# PROMPT_STEP_1_DIMENSIONS = """TASK Analyze the provided images to reconstruct the structural 'Skeleton' of the wall... [Truncated for brevity, paste your exact prompt text here] ... REQUIRED EXAMPLE JSON OUTPUT FORMAT { ... }"""
-
+SYSTEM_PROMPT = "You are a Senior BIM (Building Information Modeling) Engineer. Your output must be valid JSON strictly following the defined schema."
 
 PROMPT_STEP_1_DIMENSIONS = (
-    'Analyze the provided images to reconstruct the structural "Skeleton" of the wall. '
-    "Ignore all furniture, lights and artwork. Mirrors, Focus ONLY on: "
+   'Analyze the provided images to reconstruct the structural "Skeleton" of the wall. '
+    "Ignore all furniture, lights and artwork. Focus ONLY on: "
     "Only consider the area marked on the image, nothing to be considered beyond the marked area. "
     "The Main Wall boundaries (Outer dimensions). "
     "The Return Wall boundaries (Outer dimensions). "
-    'Return wall corners are mentioned as black angle with blue dot. Identify its side and direction wrt main main wall. '
-    'Return wall width and depth from annotations. If black angle with blue dot is not there then don\'t consider the return wall. '
+    'Return wall corners are mentioned as "C". Identify its side and direction wrt main main wall. '
+    'Return wall width and depth from annotations. If "C" is not mentioned then don\'t consider the return wall. '
     "Door openings, Arched openings, Windows boundaries. "
     "If Window and Door dimensions are mentioned, always take the mentioned dimensions. "
     "Structural Protrusions (Beams at ceiling, Columns, Return walls). "
     "Beam is mentioned as 'B' its depth is mentioned after it, "
     "Column/Pillar is mentioned as 'P ' and its depth is mentioned after it. "
-    "If "B"/"P" are not mentioned then don\'t consider the beam/column wall. "
-    "The main and return wall can host/have Beam, column, door, arch, window, Niche. "
-    "The main and return wall can host/have Beam, column, door, arch, window, niche "
+    'If "B"/"P" are not mentioned then don\'t consider the beam/column wall. '
+    "The main and return wall can host/have Beam, column, door, arch, window. "
     'Switch boards are marked by area and are mentioned as "S". '
     'If "S" is not mentioned then don\'t consider the switch board. '
-    "Switch board, MCB Box, AC are hosted on structural elements (main wall, return wall, beam, column) "
+    "AC unit and its dimension. "
+    "Switch board, AC are hosted on structural elements (main wall, return wall, beam, column) "
     "STRICT COORDINATE RULES "
     "Origin (0,0) is the BOTTOM-LEFT corner of the visible wall. "
     "Units: FEET. Convert inches to decimals (6' 6\" = 6.5, 9\" = 0.75). "
@@ -41,7 +38,6 @@ PROMPT_STEP_1_DIMENSIONS = (
     "the wall protrudes from the main wall plane), it is OUTWARD.\n"
     "  When a pillar or column sits at the junction of two walls, inspect whether the return wall "
     "goes behind or in front of the main wall plane to choose the correct direction.\n"
-    "Any depth of wall cutout pillar that is not mentioned condiser it 0.01 by default"
     "\n"
     "SCHEMA ENUMS "
     'type: ["BEAM", "COLUMN", "DOOR_RECT", "DOOR_ARCH", "ARCH_OPENING", "MAIN_WALL", "RETURN_WALL", "WINDOW", "SWITCH_BOARD", "AC"] '
@@ -49,7 +45,7 @@ PROMPT_STEP_1_DIMENSIONS = (
     'side: ["RIGHT", "LEFT"] '
     'direction: ["INWARD", "OUTWARD"] '
     'origin: { "x": < float >, "y": < float >, "z": < float > }, '
-    'dimensions: { "width": < float >, "height": < float >, "depth": 0.01 }, '
+    'dimensions: { "width": < float >, "height": < float >, "depth": 0.75 }, '
     'arch_shape (for arched openings only): ["SEMI", "QUARTER"], '
     'orientation (for QUARTER arches only): ["TL", "TR", "BL", "BR"], '
     "radius (for arches): < float, feet >. "
@@ -62,13 +58,13 @@ PROMPT_STEP_1_DIMENSIONS = (
     '{ "elements": [ '
     '{ "id": "MAIN_WALL", "category": "STRUCTURE", "type": "MAIN_WALL", '
     '"origin": { "x": 0, "y": 0, "z": 0 }, '
-    '"dimensions": { "width": 0, "height": 0, "depth": 0.75 } }, '
+    '"dimensions": { "width": 0, "height": 0, "depth": 0.01 } }, '
     '{ "id": "RETURN_WALL_LEFT", "category": "STRUCTURE", "type": "RETURN_WALL", '
     '"side": "LEFT", "direction": "INWARD", '
-    '"dimensions": {"width": 0.75, "height": 10.0, "depth": 4.0} }, '
+    '"dimensions": {"width": 0.01, "height": 10.0, "depth": 4.0} }, '
     '{ "id": "RETURN_WALL_RIGHT", "category": "STRUCTURE", "type": "RETURN_WALL", '
     '"side": "RIGHT", "direction": "OUTWARD", '
-    '"dimensions": {"width": 0.75, "height": 10.0, "depth": 3.0} }, '
+    '"dimensions": {"width": 0.01, "height": 10.0, "depth": 3.0} }, '
     '{ "id": "BEAM_MAIN_WALL", "category": "STRUCTURE", "type": "BEAM", '
     '"host_id": "MAIN_WALL", "origin": {"x": 0, "y": 8, "z": 0}, '
     '"dimensions": {"width": 2.0, "height": 1.0, "depth": 0.75} }, '
@@ -77,7 +73,7 @@ PROMPT_STEP_1_DIMENSIONS = (
     '"dimensions": {"width": 1.0, "height": 10, "depth": 0.75} }, '
     '{ "id": "ARCH_OPENING_MAIN_WALL_1", "category": "STRUCTURE", "type": "ARCH_OPENING", '
     '"host_id": "MAIN_WALL", "origin": {"x": 4, "y": 0, "z": 0}, '
-    '"dimensions": {"width": 3.0, "height": 7.0, "depth": 0.75}, "arch_shape": "SEMI", "radius": 1.5 }, '
+    '"dimensions": {"width": 3.0, "height": 7.0, "depth": 0.01}, "arch_shape": "SEMI", "radius": 1.5 }, '
     '{ "id": "SWITCH_BOARD_MAIN_WALL_1", "category": "ELECTRICAL", "type": "SWITCH_BOARD", '
     '"host_id": "MAIN_WALL", "origin": { "x": 6, "y": 4, "z": 0 }, '
     '"dimensions": { "width": 0.8, "height": 0.8, "depth": 0.1 } }, '

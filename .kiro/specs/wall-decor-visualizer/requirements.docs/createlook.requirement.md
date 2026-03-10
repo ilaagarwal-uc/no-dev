@@ -19,9 +19,7 @@ This feature is accessed after the 3D base model has been successfully generated
 - **Look**: A complete visualization consisting of the Base_Model with all Applied_Models
 - **Pen_Input**: Stylus/pen-based input from a tablet device
 - **Touch_Target**: Interactive UI element sized appropriately for pen/stylus interaction (minimum 44x44px)
-- **Material_Quantity**: Calculated number of items needed based on marked dimensions and item specifications
 - **Item_Specification**: Configuration defining dimensions and properties of a decorative item
-- **Bill_of_Materials**: Comprehensive report listing all items, quantities, and specifications
 
 ---
 
@@ -155,32 +153,32 @@ This feature is accessed after the 3D base model has been successfully generated
 
 2. **Position Manipulation (Pen Input)**
    - WHEN model is selected, THE system SHALL display position gizmo (3-axis arrows, 44x44px touch targets)
+2. **Position Manipulation (Pen Input)**
+   - WHEN model is selected, THE system SHALL display position gizmo (3-axis arrows, 44x44px touch targets)
    - WHEN user drags an axis arrow with pen, THE model SHALL move along that axis only
    - WHEN user drags the center sphere with pen, THE model SHALL move freely on the surface plane
    - THE system SHALL support pressure-sensitive movement (lighter = finer control, heavier = faster movement)
    - THE system SHALL constrain movement to keep model on Base_Model surface
-   - THE system SHALL provide snap-to-grid option (6-inch grid, toggle with pen button)
+   - THE system SHALL provide snap-to-grid toggle button in toolbar (6-inch grid)
    - THE system SHALL show distance measurements during pen drag
    - THE system SHALL align to 6-inch grid when snap is enabled
-
+   - WHEN model is selected, THE system SHALL display rotation gizmo (3-axis circles, 44x44px touch targets)
 3. **Rotation Manipulation (Pen Input)**
    - WHEN model is selected, THE system SHALL display rotation gizmo (3-axis circles, 44x44px touch targets)
    - WHEN user drags a rotation circle with pen, THE model SHALL rotate around that axis
    - THE system SHALL support two-finger pen gesture for free rotation (if tablet supports)
    - THE system SHALL display rotation angle in degrees during pen manipulation (large, readable text)
-   - THE system SHALL provide snap-to-angle option (15°, 30°, 45°, 90° increments, toggle with pen button)
+   - THE system SHALL provide snap-to-angle toggle button in toolbar (15°, 30°, 45°, 90° increments)
    - THE system SHALL support pressure-sensitive rotation (lighter = finer control)
-
+   - WHEN model is selected, THE system SHALL display scale gizmo (3-axis boxes, 44x44px touch targets)
 4. **Scale Manipulation (Pen Input)**
    - WHEN model is selected, THE system SHALL display scale gizmo (3-axis boxes, 44x44px touch targets)
    - WHEN user drags a scale box with pen, THE model SHALL scale along that axis
    - WHEN user drags the center box with pen, THE model SHALL scale uniformly
    - THE system SHALL support pinch gesture with pen for uniform scaling (if tablet supports)
    - THE system SHALL constrain scaling between 0.1x and 10x original size
-   - THE system SHALL maintain aspect ratio by default (unlock with pen button press)
+   - THE system SHALL provide aspect ratio lock toggle button in toolbar
    - THE system SHALL display scale percentage during pen manipulation
-
-5. **Properties Panel**
    - WHEN model is selected, THE properties panel SHALL display:
      - Model name
      - Position (X, Y, Z coordinates)
@@ -205,17 +203,23 @@ This feature is accessed after the 3D base model has been successfully generated
 
 7. **Pen Button Shortcuts**
    - THE system SHALL support pen button shortcuts (if pen has buttons):
-     - Pen button 1: Toggle snap-to-grid
-     - Pen button 2: Undo last action
-     - Pen button 1 + 2: Redo last action
+7. **UI Action Buttons**
+   - THE system SHALL provide toolbar buttons (all 44x44px minimum) for:
+     - Undo (reverses last action)
+     - Redo (re-applies undone action)
+     - Snap to Grid toggle (enables/disables 6-inch grid snapping)
+     - Snap to Angle toggle (enables/disables angle snapping at 15°, 30°, 45°, 90°)
+     - Lock Aspect Ratio toggle (maintains proportions during scaling)
+     - Delete Selected (removes selected model)
+     - Duplicate Selected (creates copy of selected model)
    - THE system SHALL support pen gestures:
      - Double-tap: Enter/exit edit mode
      - Long-press (1s): Context menu
      - Swipe left: Undo
      - Swipe right: Redo
    - THE system SHALL display gesture hints on first use
-
----
+   - ALL toolbar buttons SHALL have clear icons and labels
+   - THE toolbar SHALL be positioned for easy pen access (top or side of screen)
 
 ### 4. Material Quantity Calculation
 
@@ -243,116 +247,12 @@ This feature is accessed after the 3D base model has been successfully generated
    - FOR custom items:
      - Use item-specific calculation formula from Item_Specification
 
-3. **Quantity Display**
-   - THE system SHALL display calculated quantities in:
-     - Properties panel for selected model
-     - Catalog item tooltip (when hovering with pen)
-     - Bill of Materials summary
-   - THE display SHALL show:
-     - Item name
-     - Quantity needed
-     - Unit of measurement
-     - Coverage area
-     - Estimated cost (if available)
-
-4. **Manual Override**
-   - THE system SHALL allow users to manually override calculated quantities (pen-friendly input)
-   - WHEN user overrides quantity, THE system SHALL:
-     - Mark the quantity as "manually adjusted"
-     - Show warning if quantity seems insufficient
-     - Preserve manual value even if model is moved
-
-5. **Quantity Aggregation**
-   - WHEN multiple instances of same item are applied, THE system SHALL:
-     - Aggregate total quantity needed
-     - Display combined total in Bill of Materials
-     - Show breakdown by location/section
-
----
-
-### 5. Bill of Materials (BOM)
-
-**User Story:** As a user, I want to see a complete list of all items and quantities needed, so that I can order materials or estimate costs.
-
-#### Acceptance Criteria
-
-1. **BOM Display**
-   - THE system SHALL provide a "Bill of Materials" button in the toolbar (44x44px minimum)
-   - WHEN tapped with pen, THE system SHALL display BOM in a modal or side panel
-   - THE BOM SHALL be organized by category (Panels, Lights, Cove, etc.)
-
-2. **BOM Content**
-   - FOR each item type, THE BOM SHALL display:
-     - Item name and thumbnail
-     - Category
-     - Quantity needed
-     - Unit dimensions (from filename)
-     - Total coverage area
-     - Unit cost (if available)
-     - Total cost (quantity × unit cost)
-   - THE BOM SHALL display grand total cost at bottom
-
-3. **BOM Actions**
-   - THE BOM SHALL provide (all buttons 44x44px minimum):
-     - Export to PDF button
-     - Export to CSV button
-     - Print button
-     - Email button (send to user's email)
-     - Copy to clipboard button
-
-4. **BOM Updates**
-   - THE BOM SHALL update in real-time as models are added/removed
-   - WHEN quantities change, THE BOM SHALL reflect changes immediately
-   - THE system SHALL highlight recently changed items (3s highlight)
-
 ---
 
 ### 6. Look Persistence and Sharing
 
 **User Story:** As a user, I want to save my wall design and share it with others, so that I can get feedback or return to it later.
 
-#### Acceptance Criteria
-
-1. **Save Look**
-   - THE system SHALL provide "Save Look" button in toolbar (44x44px minimum)
-   - WHEN tapped with pen, THE system SHALL:
-     - Prompt for look name and description (pen-friendly input)
-     - Save Base_Model reference
-     - Save all Applied_Models with positions/rotations/scales
-     - Save Bill of Materials
-     - Generate unique look ID
-     - Store in backend database
-   - THE system SHALL display success message with look ID
-
-2. **Load Look**
-   - THE system SHALL provide "My Looks" button in toolbar (44x44px minimum)
-   - WHEN tapped with pen, THE system SHALL display list of user's saved looks
-   - EACH look SHALL display:
-     - Thumbnail preview
-     - Look name
-     - Creation date
-     - Last modified date
-     - Number of applied models
-   - WHEN user taps a look with pen, THE system SHALL load it in 3D viewer
-
-3. **Share Look**
-   - THE system SHALL provide "Share" button for each saved look (44x44px minimum)
-   - WHEN tapped with pen, THE system SHALL:
-     - Generate shareable link
-     - Copy link to clipboard
-     - Display QR code for mobile sharing
-     - Provide social media share buttons
-   - SHARED looks SHALL be viewable by anyone with the link (read-only)
-
-4. **Look Versioning**
-   - THE system SHALL maintain version history for each look
-   - WHEN user saves changes to existing look, THE system SHALL:
-     - Create new version
-     - Preserve previous versions
-     - Allow reverting to previous versions
-   - THE system SHALL display version history with timestamps
-
----
 
 ### 7. Catalog Management (Admin)
 

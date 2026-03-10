@@ -933,63 +933,39 @@ canavs keeps flickering as a I draw on it
 **User Query**: createlooks requiremen .md is there , no need to create task just implement
 
 
-## 312. 2026-03-09 - How to Start Standalone Blender Viewer
-**Timestamp**: 2026-03-09T[current_time]
-**User Query**: how to start stand alone blender to try this out ?
+
+## 315. 2026-03-10 - Just Update SDK Version, No Bugfix Spec Needed
+**Timestamp**: 2026-03-10T[current_time]
+**User Query**: no need for a bug fix just updated the sdk version
 
 
-## 313. 2026-03-09 - Base Wall Model Script for Testing
-**Timestamp**: 2026-03-09T[current_time]
-**User Query**: base wall model has to be [Python Blender script provided for creating wall skeleton with door opening, including feet_to_blender_units conversion, clear_scene function, and create_wall_skeleton function that exports to GLB format]
+## 316. 2026-03-10 - Use genai Library
+**Timestamp**: 2026-03-10T[current_time]
+**User Query**: use genai library
 
 
-## 314. 2026-03-09 - Blender Script Error - ObjectDisplay Attribute
-**Timestamp**: 2026-03-09T[current_time]
-**User Query**: An error occurred during wall skeleton creation: 'ObjectDisplay' object has no attribute 'type'
-Traceback (most recent call last):
-  File "/Users/ilaagarwal/no-dev/wall-decor-visualizer/models/generate_wall_skeleton.py", line 142, in create_wall_skeleton
-    door_cutter_obj.display.type = 'BOUNDS'
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'ObjectDisplay' object has no attribute 'type'
-Blender quit
+## 317. 2026-03-10 - Use genai Package with gemini-3.0-flash and v1beta
+**Timestamp**: 2026-03-10T[current_time]
+**User Query**: use genai package to call gemini-3.0 flash api with v1beta api version
 
 
-## 315. 2026-03-09 - How to Add Models to Base Wall
-**Timestamp**: 2026-03-09T[current_time]
-**User Query**: how to start add model to the base wall , how to run that ?
+## 318. 2026-03-10 - Module Not Found Error After npm install
+**Timestamp**: 2026-03-10T[current_time]
+**User Query**: 100 packages are looking for fundingrun `npm fund` for detailsilaagarwal@UCLP4105 backend % npm run devnpm warn Unknown user config "python". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.npm warn Unknown user config "npm". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.> wall-decor-visualizer-backend@1.0.0 dev> tsx watch src/server.tsnode:internal/modules/run_main:107triggerUncaughtException(^Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@google/generative-ai' imported from /Users/ilaagarwal/no-dev/wall-decor-visualizer/backend/src/data-service/domain/gemini-service/index.tsat Object.getPackageJSONURL (node:internal/modules/package_json_reader:301:9)at packageResolve (node:internal/modules/esm/resolve:764:81)at moduleResolve (node:internal/modules/esm/resolve:855:18)at defaultResolve (node:internal/modules/esm/resolve:988:11)at nextResolve (node:internal/modules/esm/hooks:769:28)at d (file:///Users/ilaagarwal/no-dev/wall-decor-visualizer/backend/node_modules/tsx/dist/esm/index.mjs:5:34)at O (file:///Users/ilaagarwal/no-dev/wall-decor-visualizer/backend/node_modules/tsx/dist/esm/index.mjs:5:1187)at async nextResolve (node:internal/modules/esm/hooks:769:22)at async AsyncLoaderHooksOnLoaderHookWorker.resolve (node:internal/modules/esm/hooks:265:24)at async MessagePort.handleMessage (node:internal/modules/esm/worker:251:18) {code: 'ERR_MODULE_NOT_FOUND'}Node.js v25.7.0
 
 
-## 316. 2026-03-09 - Implement Create Look Feature
-**Timestamp**: 2026-03-09T[current_time]
-**User Query**: The Create Look feature is the next major piece that brings everything together - it's where users will actually design their wall decorations! let implement it
+## 319. 2026-03-10 - Still Getting Module Not Found Error
+**Timestamp**: 2026-03-10T[current_time]
+**User Query**: node:internal/modules/run_main:107triggerUncaughtException(^Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@google/generative-ai' imported from /Users/ilaagarwal/no-dev/wall-decor-visualizer/backend/src/data-service/domain/gemini-service/index.tsat Object.getPackageJSONURL (node:internal/modules/package_json_reader:301:9)at packageResolve (node:internal/modules/esm/resolve:764:81)at moduleResolve (node:internal/modules/esm/resolve:855:18)at defaultResolve (node:internal/modules/esm/resolve:988:11)at nextResolve (node:internal/modules/esm/hooks:769:28)at d (file:///Users/ilaagarwal/no-dev/wall-decor-visualizer/backend/node_modules/tsx/dist/esm/index.mjs:5:34)at O (file:///Users/ilaagarwal/no-dev/wall-decor-visualizer/backend/node_modules/tsx/dist/esm/index.mjs:5:1187)at async nextResolve (node:internal/modules/esm/hooks:769:22)at async AsyncLoaderHooksOnLoaderHookWorker.resolve (node:internal/modules/esm/hooks:265:24)at async MessagePort.handleMessage (node:internal/modules/esm/worker:251:18) {code: 'ERR_MODULE_NOT_FOUND'}Node.js v25.7.0
 
 
-## 317. 2026-03-09 - Delete Blender Viewer Implementation
-**Timestamp**: 2026-03-09T[current_time]
-**User Query**: delete blender view that yiui have created it is uselesss
+## Prompt 372 - 2026-03-10 00:00:00
+Error: Cannot find module '/Users/ilaagarwal/no-dev/wall-decor-visualizer/backend/dev'at Module._resolveFilename (node:internal/modules/cjs/loader:1455:15)at defaultResolveImpl (node:internal/modules/cjs/loader:1065:19)at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1070:22)at Module._load (node:internal/modules/cjs/loader:1241:25)at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)at node:internal/main/run_main_module:33:47 {code: 'MODULE_NOT_FOUND',requireStack: []}
 
 
-## 318. 2026-03-09 - Implement Create Look Feature
-**Timestamp**: 2026-03-09T[current_time]
-**User Query**: lets implemet create look implement.md
+## Prompt 373 - 2026-03-10 00:05:00
+========== GEMINI API ERROR ==========Timestamp: 2026-03-10T17:47:39.303ZError type: TypeErrorError message: client.models.get is not a functionError status: undefinedError details: {}========== GEMINI API ERROR END ==========Error generating Blender script: {code: 'UNKNOWN_ERROR',message: 'client.models.get is not a function',retryable: false}[2026-03-10T17:47:40.032Z] GET /api/model/job/7195c3c0-a6c5-40bd-999b-8149852e76c3[2026-03-10T17:47:40.033Z] GET /api/model/job/7195c3c0-a6c5-40bd-999b-8149852e76c3 - 200 (1ms)
 
 
-## 319. 2026-03-09 - Proceed with Checkpoint 15
-**Timestamp**: 2026-03-09T20:35:00
-**User Query**: ok proceed
-
-## 320. 2026-03-09 - Cancel Operation
-**Timestamp**: 2026-03-09T20:36:00
-**User Query**: cancel
-
-
-## 321. 2026-03-09 - Backend Server Crash Error
-**Timestamp**: 2026-03-09T20:40:00
-**User Query**: why getting this error node:internal/modules/run_main:107triggerUncaughtException(^[Object: null prototype] {Symbol(nodejs.util.inspect.custom): [Function: [nodejs.util.inspect.custom]]}Node.js v25.7.0ilaagarwal@UCLP4105 backend % npm run devnpm warn Unknown user config "python". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.npm warn Unknown user config "npm". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.> wall-decor-visualizer-backend@1.0.0 dev> node --loader ts-node/esm src/server.ts(node:38585) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:--import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("ts-node/esm", pathToFileURL("./"));'(Use `node --trace-warnings ...` to show where the warning was created)node:internal/modules/run_main:107triggerUncaughtException(^[Object: null prototype] {Symbol(nodejs.util.inspect.custom): [Function: [nodejs.util.inspect.custom]]}Node.js v25.7.0ilaagarwal@UCLP4105 backend % npm run devnpm warn Unknown user config "python". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.npm warn Unknown user config "npm". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.> wall-decor-visualizer-backend@1.0.0 dev> node --loader ts-node/esm src/server.ts(node:41849) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:--import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("ts-node/esm", pathToFileURL("./"));'(Use `node --trace-warnings ...` to show where the warning was created)node:internal/modules/run_main:107triggerUncaughtException(^[Object: null prototype] {Symbol(nodejs.util.inspect.custom): [Function: [nodejs.util.inspect.custom]]}Node.js v25.7.0
-
-## Prompt 363 - 2026-03-09 [current_time]
-git pusl all changes - m "Model generated"
-
-
-## Prompt 364 - 2026-03-09 20:45:00
-git pusl all changes - m "Model generated"
+## Prompt 374 - 2026-03-10 00:10:00
+push all changes

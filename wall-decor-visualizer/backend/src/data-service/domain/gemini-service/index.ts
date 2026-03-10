@@ -1,20 +1,21 @@
 // Gemini API integration logic
 import * as GeminiSchema from './gemini_service_schema.js';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import fs from 'fs/promises';
 import path from 'path';
 
 // Initialize Gemini API client
-let genAI: GoogleGenerativeAI | null = null;
+let genAI: GoogleGenAI | null = null;
 
-function getGeminiClient(): GoogleGenerativeAI {
+function getGeminiClient(): GoogleGenAI {
   if (!genAI) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       throw new Error('GEMINI_API_KEY environment variable is not set');
     }
     console.log('Initializing Gemini API client with key:', `${apiKey.substring(0, 10)}...${apiKey.substring(apiKey.length - 4)}`);
-    genAI = new GoogleGenerativeAI(apiKey);
+    // Initialize with v1beta API version for gemini-3.0-flash support
+    genAI = new GoogleGenAI({ apiKey, apiVersion: 'v1beta' });
   }
   return genAI;
 }
@@ -102,6 +103,10 @@ Generate an executable Blender Python script that can be run in headless blender
 
 IMPORTANT NOTES:
 - Export to GLB format to include all data in a single file
+
+Before outputting the blender file check there are no execution errors in the file, 
+if there are generate again n return that one
+
 `;
 }
 
@@ -117,7 +122,8 @@ export async function callGeminiAPI(prompt: string, imageBase64?: string): Promi
     
     const apiKey = process.env.GEMINI_API_KEY || '';
     console.log('API Key:', apiKey ? `${apiKey.substring(0, 10)}...${apiKey.substring(apiKey.length - 4)}` : 'NOT FOUND');
-    console.log('Model:', 'gemini-2.5-flash');
+    console.log('Model:', 'gemini-3.0-flash');
+    console.log('API Version:', 'v1beta');
     console.log('Image provided:', imageBase64 ? 'Yes' : 'No');
     if (imageBase64) {
       console.log('Image data length:', imageBase64.length, 'characters');
@@ -127,42 +133,47 @@ export async function callGeminiAPI(prompt: string, imageBase64?: string): Promi
     console.log(prompt);
     console.log('--- FULL PROMPT END ---\n');
     
-    // Use Gemini 2.5 Flash Latest (stable model with v1 API support)
-    const model = client.getGenerativeModel({ 
-      model: 'gemini-2.5-flash',
-      generationConfig: {
-        temperature: 0.2
-      }
-    });
-    
-    console.log('Generation Config:', {
-      temperature: 0.2
-    });
-    
+    // Use Gemini 3.0 Flash with v1beta API
     let result;
     
     if (imageBase64) {
       // Image data provided directly as base64
       console.log('Calling Gemini API with image data...');
-      result = await model.generateContent([
-        prompt,
-        {
-          inlineData: {
-            data: imageBase64,
-            mimeType: 'image/jpeg'
+      result = await client.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  data: imageBase64,
+                  mimeType: 'image/jpeg'
+                }
+              }
+            ]
           }
+        ],
+        config: {
+          temperature: 0.2
         }
-      ]);
+      });
       console.log('Gemini API call completed successfully (with image)');
     } else {
       // Text-only request
       console.log('Calling Gemini API (text-only)...');
-      result = await model.generateContent(prompt);
+      result = await client.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+        config: {
+          temperature: 0.2
+        }
+      });
       console.log('Gemini API call completed successfully (text-only)');
     }
     
-    const response = result.response;
-    const text = response.text();
+    const text = result.text;
     
     console.log('Response received');
     console.log('Response text length:', text.length, 'characters');
@@ -197,7 +208,7 @@ export async function callGeminiAPI(prompt: string, imageBase64?: string): Promi
       script: script.trim(),
       metadata: {
         tokensUsed: 0, // Gemini API doesn't provide token count in this version
-        modelVersion: 'gemini-2.5-flash'
+        modelVersion: 'gemini-3.0-flash'
       }
     };
   } catch (error: any) {
