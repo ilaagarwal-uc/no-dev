@@ -4,6 +4,7 @@ import { IModelGenerationState, IJobStatus } from './interface.js';
 import { ProgressSection } from './ProgressSection.js';
 import { ModelViewer } from './ModelViewer.js';
 import { ErrorDisplay } from './ErrorDisplay.js';
+import { CatalogPanel } from './CatalogPanel.js';
 import { generateModelApi } from '../../../data-service/application/model-generation/generate_model.api.js';
 import { getJobStatusApi } from '../../../data-service/application/model-generation/get_job_status.api.js';
 import { getModelApi } from '../../../data-service/application/model-generation/get_model.api.js';
@@ -245,6 +246,7 @@ export function ModelGenerationPage(): JSX.Element {
         {state.modelUrl && !state.error && (
           <>
             <ModelViewer modelUrl={state.modelUrl} />
+            <CatalogPanel />
             <div className={styles.actionButtons}>
               <button
                 onClick={handleCreateLook}

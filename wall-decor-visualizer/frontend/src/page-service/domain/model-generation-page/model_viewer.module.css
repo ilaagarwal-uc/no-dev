@@ -134,3 +134,40 @@
   font-weight: 500;
   color: #333;
 }
+
+
+.drawModeButton {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  padding: 0.75rem 1.25rem;
+  min-width: 44px;
+  min-height: 44px;
+  background-color: rgba(255, 255, 255, 0.95);
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+}
+
+.drawModeButton:hover {
+  background-color: #e3f2fd;
+  border-color: #2196f3;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.drawModeButton.active {
+  background-color: #2196f3;
+  border-color: #1976d2;
+  color: white;
+}
+
+.drawModeButton:focus {
+  outline: 3px solid #90caf9;
+  outline-offset: 2px;
+}

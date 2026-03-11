@@ -2,17 +2,60 @@ import React, { useState, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { IModelViewerProps, ViewMode, IModelInfo } from './interface.js';
+import { IModelViewerProps } from './interface.js';
 import { ViewerControls } from './ViewerControls.js';
-import { ViewModeSelector } from './ViewModeSelector.js';
-import { ModelInfoPanel } from './ModelInfoPanel.js';
 import styles from './model_viewer.module.css';
 
+// Half foot grid spacing in Three.js units (assuming 1 unit = 1 foot)
+const GRID_SPACING = 0.5;
+
+// Create grid texture for wall surface
+function createGridTexture(width: number, height: number): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  const pixelsPerUnit = 100; // 100 pixels per foot
+  canvas.width = Math.ceil(width * pixelsPerUnit);
+  canvas.height = Math.ceil(height * pixelsPerUnit);
+  
+  const ctx = canvas.getContext('2d')!;
+  
+  // Transparent background
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  // Grid line style
+  ctx.strokeStyle = '#4a90d9';
+  ctx.lineWidth = 2;
+  ctx.globalAlpha = 0.7;
+  
+  const gridPixels = GRID_SPACING * pixelsPerUnit;
+  
+  // Draw vertical lines
+  for (let x = 0; x <= canvas.width; x += gridPixels) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvas.height);
+    ctx.stroke();
+  }
+  
+  // Draw horizontal lines
+  for (let y = 0; y <= canvas.height; y += gridPixels) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+  }
+  
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.needsUpdate = true;
+  
+  return texture;
+}
+
 export function ModelViewer({ modelUrl }: IModelViewerProps): JSX.Element {
-  const [viewMode, setViewMode] = useState<ViewMode>('perspective');
-  const [modelInfo, setModelInfo] = useState<IModelInfo | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [drawMode, setDrawMode] = useState<boolean>(false);
   
   // Three.js refs
   const containerRef = useRef<HTMLDivElement>(null);
@@ -22,6 +65,8 @@ export function ModelViewer({ modelUrl }: IModelViewerProps): JSX.Element {
   const controlsRef = useRef<OrbitControls | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const modelRef = useRef<THREE.Group | null>(null);
+  const gridMeshRef = useRef<THREE.Mesh | null>(null);
+  const originalMaterialsRef = useRef<Map<THREE.Mesh, THREE.Material | THREE.Material[]>>(new Map());
   
   // Initialize Three.js scene
   useEffect(() => {
@@ -207,16 +252,12 @@ export function ModelViewer({ modelUrl }: IModelViewerProps): JSX.Element {
           }
         });
         
-        // Update model info with actual values
-        setModelInfo({
-          vertexCount: Math.round(vertexCount),
-          faceCount: Math.round(faceCount),
-          fileSize: 0 // File size would need to be passed from backend
-        });
-        
         scene.add(model);
         console.log('ModelViewer: Model added to scene');
         console.log('ModelViewer: Scene children after add:', scene.children.length);
+        
+        // Create grid overlay for the wall (initially hidden)
+        createWallGrid(scene, size, model);
         
         // Adjust camera to fit model
         const maxDim = Math.max(size.x, size.y, size.z);
@@ -283,136 +324,49 @@ export function ModelViewer({ modelUrl }: IModelViewerProps): JSX.Element {
     };
   }, [modelUrl]);
   
-  // Handle view mode changes
-  useEffect(() => {
-    if (!sceneRef.current || !cameraRef.current || !rendererRef.current || !containerRef.current) return;
+  // Create grid overlay on the wall surface
+  const createWallGrid = (scene: THREE.Scene, modelSize: THREE.Vector3, model: THREE.Group) => {
+    // Create grid texture
+    const gridTexture = createGridTexture(modelSize.x * 1.1, modelSize.y * 1.1);
     
-    const scene = sceneRef.current;
-    const renderer = rendererRef.current;
-    const container = containerRef.current;
-    const currentCamera = cameraRef.current;
+    // Create a plane geometry that matches the wall size
+    const planeGeometry = new THREE.PlaneGeometry(modelSize.x * 1.1, modelSize.y * 1.1);
     
-    if (viewMode === 'perspective') {
-      // Switch to perspective camera if not already
-      if (!(cameraRef.current instanceof THREE.PerspectiveCamera)) {
-        const perspectiveCamera = new THREE.PerspectiveCamera(
-          75,
-          container.clientWidth / container.clientHeight,
-          0.1,
-          1000
-        );
-        
-        // Copy position and rotation if available
-        if (currentCamera.position) {
-          perspectiveCamera.position.copy(currentCamera.position);
-        }
-        if (currentCamera.rotation) {
-          perspectiveCamera.rotation.copy(currentCamera.rotation);
-        }
-        
-        cameraRef.current = perspectiveCamera;
-        
-        if (controlsRef.current) {
-          controlsRef.current.object = perspectiveCamera;
-        }
+    // Create material with grid texture
+    const gridMaterial = new THREE.MeshBasicMaterial({
+      map: gridTexture,
+      transparent: true,
+      opacity: 0.8,
+      side: THREE.DoubleSide,
+      depthTest: true,
+      depthWrite: false,
+      blending: THREE.NormalBlending
+    });
+    
+    // Create mesh
+    const gridMesh = new THREE.Mesh(planeGeometry, gridMaterial);
+    gridMesh.name = 'wallGrid';
+    gridMesh.visible = false; // Initially hidden
+    
+    // Position grid slightly in front of the wall (z offset)
+    gridMesh.position.copy(model.position);
+    gridMesh.position.z += 0.02; // Small offset to prevent z-fighting
+    
+    // Add to model so it moves with the wall
+    model.add(gridMesh);
+    gridMeshRef.current = gridMesh;
+  };
+  
+  // Toggle draw mode (show/hide grid)
+  const handleToggleDrawMode = () => {
+    setDrawMode(prev => {
+      const newMode = !prev;
+      if (gridMeshRef.current) {
+        gridMeshRef.current.visible = newMode;
       }
-      
-      // Ensure wireframe is off
-      if (modelRef.current) {
-        modelRef.current.traverse((child) => {
-          if (child instanceof THREE.Mesh) {
-            if (Array.isArray(child.material)) {
-              child.material.forEach(mat => mat.wireframe = false);
-            } else {
-              child.material.wireframe = false;
-            }
-          }
-        });
-      }
-    } else if (viewMode === 'orthographic') {
-      // Calculate frustum based on scene bounds
-      let frustumSize = 5;
-      if (modelRef.current) {
-        const box = new THREE.Box3().setFromObject(modelRef.current);
-        const size = box.getSize(new THREE.Vector3());
-        frustumSize = Math.max(size.x, size.y, size.z) * 1.5;
-      }
-      
-      const aspect = container.clientWidth / container.clientHeight;
-      const orthographicCamera = new THREE.OrthographicCamera(
-        -frustumSize * aspect / 2,
-        frustumSize * aspect / 2,
-        frustumSize / 2,
-        -frustumSize / 2,
-        0.1,
-        1000
-      );
-      
-      // Copy position and rotation if available
-      if (currentCamera.position) {
-        orthographicCamera.position.copy(currentCamera.position);
-      }
-      if (currentCamera.rotation) {
-        orthographicCamera.rotation.copy(currentCamera.rotation);
-      }
-      
-      cameraRef.current = orthographicCamera;
-      
-      if (controlsRef.current) {
-        controlsRef.current.object = orthographicCamera;
-      }
-      
-      // Ensure wireframe is off
-      if (modelRef.current) {
-        modelRef.current.traverse((child) => {
-          if (child instanceof THREE.Mesh) {
-            if (Array.isArray(child.material)) {
-              child.material.forEach(mat => mat.wireframe = false);
-            } else {
-              child.material.wireframe = false;
-            }
-          }
-        });
-      }
-    } else if (viewMode === 'wireframe') {
-      // Switch back to perspective camera if needed
-      if (!(cameraRef.current instanceof THREE.PerspectiveCamera)) {
-        const perspectiveCamera = new THREE.PerspectiveCamera(
-          75,
-          container.clientWidth / container.clientHeight,
-          0.1,
-          1000
-        );
-        
-        // Copy position and rotation if available
-        if (currentCamera.position) {
-          perspectiveCamera.position.copy(currentCamera.position);
-        }
-        if (currentCamera.rotation) {
-          perspectiveCamera.rotation.copy(currentCamera.rotation);
-        }
-        
-        cameraRef.current = perspectiveCamera;
-        
-        if (controlsRef.current) {
-          controlsRef.current.object = perspectiveCamera;
-        }
-      }
-      
-      // Enable wireframe on all meshes
-      if (modelRef.current) {
-        modelRef.current.traverse((child) => {
-          if (child instanceof THREE.Mesh) {
-            if (Array.isArray(child.material)) {
-              child.material.forEach(mat => mat.wireframe = true);
-            } else {
-              child.material.wireframe = true;
-            }
-          }
-        });
-      }
-    }
-  }, [viewMode]);
+      return newMode;
+    });
+  };
   
   const handleZoomIn = () => {
     if (!cameraRef.current || !controlsRef.current) return;
@@ -498,10 +452,14 @@ export function ModelViewer({ modelUrl }: IModelViewerProps): JSX.Element {
         )}
       </div>
       
-      <ViewModeSelector 
-        viewMode={viewMode} 
-        onViewModeChange={setViewMode} 
-      />
+      <button
+        className={`${styles.drawModeButton} ${drawMode ? styles.active : ''}`}
+        onClick={handleToggleDrawMode}
+        aria-label={drawMode ? 'Exit Draw Mode' : 'Enter Draw Mode'}
+        aria-pressed={drawMode}
+      >
+        {drawMode ? '✓ Draw Mode' : '📐 Draw Mode'}
+      </button>
       
       <ViewerControls 
         onZoomIn={handleZoomIn}
@@ -509,8 +467,6 @@ export function ModelViewer({ modelUrl }: IModelViewerProps): JSX.Element {
         onReset={handleReset}
         onFullscreen={handleFullscreen}
       />
-      
-      <ModelInfoPanel modelInfo={modelInfo} />
     </div>
   );
 }

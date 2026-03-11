@@ -9,6 +9,8 @@ console.log('Environment loaded, MONGODB_URI exists:', !!process.env.MONGODB_URI
 console.log('Starting imports...');
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import mongoose from 'mongoose';
 import multer from 'multer';
 import { generateOTPHandler, verifyOTPHandler, refreshTokenHandler, logoutHandler, authenticateJWT, authenticateAdmin } from './data-service/application/auth/index.js';
@@ -23,6 +25,20 @@ import type { IAuthRequest } from './data-service/application/auth/index.js';
 
 console.log('All imports loaded successfully');
 const app = express();
+
+// Get __dirname equivalent for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Serve static models folder
+const modelsPath = path.join(__dirname, '../../models');
+console.log('Serving static models from:', modelsPath);
+app.use('/models', express.static(modelsPath, {
+  setHeaders: (res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Cache-Control', 'public, max-age=3600');
+  }
+}));
 
 // Configure multer for file uploads
 const upload = multer({
@@ -202,6 +218,10 @@ app.get('/api/models/:userId/:filename', async (req, res) => {
     }
 
     console.log('Model proxy: Model found in memory, size:', modelFile.length, 'bytes');
+    
+    // Log first few bytes to verify it's a valid GLB
+    const magic = modelFile.slice(0, 4).toString('ascii');
+    console.log('Model proxy: File magic:', magic, '(should be "glTF")');
 
     // Determine content type based on file extension
     const contentType = filename.endsWith('.glb') ? 'model/gltf-binary' : 'model/gltf+json';

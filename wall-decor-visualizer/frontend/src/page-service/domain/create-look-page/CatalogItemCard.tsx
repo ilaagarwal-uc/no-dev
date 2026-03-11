@@ -131,9 +131,9 @@ export const CatalogItemCard: React.FC<ICatalogItemCardProps> = ({
       cove: '#2196f3',
       bidding: '#9c27b0',
       artwork: '#ff5722',
-      other: '#607d8b',
+      shelf: '#795548',
     };
-    return colors[category] || colors.other;
+    return colors[category] || colors.shelf;
   };
 
   const ariaLabel = `${item.name}, ${item.category} category, dimensions ${item.dimensions.width} by ${item.dimensions.height} by ${item.dimensions.depth} feet${item.unitCost !== undefined ? `, costs $${item.unitCost.toFixed(2)}` : ''}. Tap to select or hold to drag onto wall.`;

@@ -8,5 +8,6 @@ export { ViewerControls } from './ViewerControls.js';
 export { ViewModeSelector } from './ViewModeSelector.js';
 export { ModelInfoPanel } from './ModelInfoPanel.js';
 export { ErrorDisplay } from './ErrorDisplay.js';
+export { CatalogPanel } from './CatalogPanel.js';
 
 export type * from './interface.js';

@@ -17,7 +17,7 @@ const CATEGORIES: { value: CatalogCategory; label: string }[] = [
   { value: 'cove', label: 'Cove' },
   { value: 'bidding', label: 'Bidding' },
   { value: 'artwork', label: 'Artwork' },
-  { value: 'other', label: 'Other' },
+  { value: 'shelf', label: 'Shelf' },
 ];
 
 export const CatalogSidebar: React.FC<ICatalogSidebarProps> = ({

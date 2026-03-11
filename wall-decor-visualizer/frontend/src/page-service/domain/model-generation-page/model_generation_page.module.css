@@ -23,6 +23,7 @@
   align-items: center;
   justify-content: center;
   padding: 2rem;
+  padding-right: 300px; /* Account for catalog panel */
   overflow: auto;
 }
 
@@ -120,4 +121,13 @@
 .createLookButton:focus {
   outline: 3px solid #90caf9;
   outline-offset: 2px;
+}
+
+
+/* Responsive adjustment for catalog panel */
+@media (max-width: 768px) {
+  .mainContent {
+    padding-right: 2rem;
+    padding-bottom: 45vh; /* Account for bottom catalog panel on mobile */
+  }
 }

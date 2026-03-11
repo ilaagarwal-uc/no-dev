@@ -15,8 +15,8 @@
     "format": "prettier --write \"src/**/*.{ts,tsx}\""
   },
   "dependencies": {
-    "@react-three/drei": "^9.88.0",
-    "@react-three/fiber": "^8.14.0",
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.18.0",
     "@reduxjs/toolkit": "^1.9.7",
     "@types/three": "^0.150.0",
     "axios": "^1.6.2",

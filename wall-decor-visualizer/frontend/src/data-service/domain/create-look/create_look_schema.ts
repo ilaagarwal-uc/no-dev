@@ -4,7 +4,7 @@ import { z } from 'zod';
 // Type Definitions
 // ============================================================================
 
-export type CatalogCategory = 'panels' | 'lights' | 'cove' | 'bidding' | 'artwork' | 'other';
+export type CatalogCategory = 'panels' | 'lights' | 'cove' | 'bidding' | 'artwork' | 'shelf';
 
 export type ViewMode = 'perspective' | 'orthographic' | 'wireframe';
 
@@ -142,7 +142,7 @@ export interface IModelMetadata {
 // ============================================================================
 
 // Catalog Category Schema
-export const CatalogCategorySchema = z.enum(['panels', 'lights', 'cove', 'bidding', 'artwork', 'other']);
+export const CatalogCategorySchema = z.enum(['panels', 'lights', 'cove', 'bidding', 'artwork', 'shelf']);
 
 // View Mode Schema
 export const ViewModeSchema = z.enum(['perspective', 'orthographic', 'wireframe']);

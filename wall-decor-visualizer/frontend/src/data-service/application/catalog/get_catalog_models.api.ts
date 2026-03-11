@@ -119,7 +119,7 @@ function generateNameFromId(modelId: string): string {
  * Infers category from model ID
  * This is a simple heuristic - can be improved with metadata
  */
-function inferCategory(modelId: string): 'panels' | 'lights' | 'cove' | 'bidding' | 'artwork' | 'other' {
+function inferCategory(modelId: string): 'panels' | 'lights' | 'cove' | 'bidding' | 'artwork' | 'shelf' {
   const id = modelId.toLowerCase();
   
   if (id.includes('light') || id.includes('lamp')) {
@@ -138,10 +138,10 @@ function inferCategory(modelId: string): 'panels' | 'lights' | 'cove' | 'bidding
     return 'artwork';
   }
   if (id.includes('shelve') || id.includes('shelf')) {
-    return 'other';
+    return 'shelf';
   }
   
-  return 'other';
+  return 'shelf';
 }
 
 /**
