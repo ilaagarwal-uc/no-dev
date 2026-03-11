@@ -9,47 +9,107 @@ import styles from './model_viewer.module.css';
 // Half foot grid spacing in Three.js units (assuming 1 unit = 1 foot)
 const GRID_SPACING = 0.5;
 
-// Create grid texture for wall surface
-function createGridTexture(width: number, height: number): THREE.CanvasTexture {
+// Create a tileable grid texture that repeats across all surfaces
+function createTileableGridTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
-  const pixelsPerUnit = 100; // 100 pixels per foot
-  canvas.width = Math.ceil(width * pixelsPerUnit);
-  canvas.height = Math.ceil(height * pixelsPerUnit);
+  // Create a 1x1 foot tile at high resolution
+  const tileSize = 256; // pixels for 1 foot
+  canvas.width = tileSize;
+  canvas.height = tileSize;
   
   const ctx = canvas.getContext('2d')!;
   
-  // Transparent background
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // White background (wall color)
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
   
-  // Grid line style
-  ctx.strokeStyle = '#4a90d9';
+  // Draw minor grid lines (0.5 foot = half the tile)
+  ctx.strokeStyle = '#d0d0d0';
+  ctx.lineWidth = 1;
+  
+  // Vertical center line (0.5 foot mark)
+  ctx.beginPath();
+  ctx.moveTo(tileSize / 2, 0);
+  ctx.lineTo(tileSize / 2, tileSize);
+  ctx.stroke();
+  
+  // Horizontal center line (0.5 foot mark)
+  ctx.beginPath();
+  ctx.moveTo(0, tileSize / 2);
+  ctx.lineTo(tileSize, tileSize / 2);
+  ctx.stroke();
+  
+  // Draw major grid lines (1 foot = edges of tile)
+  ctx.strokeStyle = '#a0a0a0';
   ctx.lineWidth = 2;
-  ctx.globalAlpha = 0.7;
   
-  const gridPixels = GRID_SPACING * pixelsPerUnit;
+  // Left edge
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(0, tileSize);
+  ctx.stroke();
   
-  // Draw vertical lines
-  for (let x = 0; x <= canvas.width; x += gridPixels) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, canvas.height);
-    ctx.stroke();
-  }
+  // Top edge
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(tileSize, 0);
+  ctx.stroke();
   
-  // Draw horizontal lines
-  for (let y = 0; y <= canvas.height; y += gridPixels) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(canvas.width, y);
-    ctx.stroke();
-  }
+  // Right edge
+  ctx.beginPath();
+  ctx.moveTo(tileSize - 1, 0);
+  ctx.lineTo(tileSize - 1, tileSize);
+  ctx.stroke();
+  
+  // Bottom edge
+  ctx.beginPath();
+  ctx.moveTo(0, tileSize - 1);
+  ctx.lineTo(tileSize, tileSize - 1);
+  ctx.stroke();
   
   const texture = new THREE.CanvasTexture(canvas);
-  texture.wrapS = THREE.ClampToEdgeWrapping;
-  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
   texture.needsUpdate = true;
   
   return texture;
+}
+
+// Regenerate UVs for a geometry to use world-space coordinates
+function regenerateUVsForWorldSpace(geometry: THREE.BufferGeometry, scale: number = 1): void {
+  const positions = geometry.attributes.position;
+  const normals = geometry.attributes.normal;
+  
+  if (!positions || !normals) return;
+  
+  const uvs = new Float32Array(positions.count * 2);
+  
+  for (let i = 0; i < positions.count; i++) {
+    const x = positions.getX(i);
+    const y = positions.getY(i);
+    const z = positions.getZ(i);
+    
+    const nx = Math.abs(normals.getX(i));
+    const ny = Math.abs(normals.getY(i));
+    const nz = Math.abs(normals.getZ(i));
+    
+    // Triplanar projection - use the dominant axis
+    if (nz >= nx && nz >= ny) {
+      // Front/back face - project onto XY plane
+      uvs[i * 2] = x * scale;
+      uvs[i * 2 + 1] = y * scale;
+    } else if (ny >= nx && ny >= nz) {
+      // Top/bottom face - project onto XZ plane
+      uvs[i * 2] = x * scale;
+      uvs[i * 2 + 1] = z * scale;
+    } else {
+      // Left/right face - project onto YZ plane
+      uvs[i * 2] = z * scale;
+      uvs[i * 2 + 1] = y * scale;
+    }
+  }
+  
+  geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
 }
 
 export function ModelViewer({ modelUrl }: IModelViewerProps): JSX.Element {
@@ -65,8 +125,10 @@ export function ModelViewer({ modelUrl }: IModelViewerProps): JSX.Element {
   const controlsRef = useRef<OrbitControls | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const modelRef = useRef<THREE.Group | null>(null);
-  const gridMeshRef = useRef<THREE.Mesh | null>(null);
-  const originalMaterialsRef = useRef<Map<THREE.Mesh, THREE.Material | THREE.Material[]>>(new Map());
+  const originalMaterialRef = useRef<THREE.Material | null>(null);
+  const gridMaterialRef = useRef<THREE.Material | null>(null);
+  const modelSizeRef = useRef<THREE.Vector3 | null>(null);
+  const originalUVsRef = useRef<Map<THREE.BufferGeometry, THREE.BufferAttribute | THREE.InterleavedBufferAttribute>>(new Map());
   
   // Initialize Three.js scene
   useEffect(() => {
@@ -210,6 +272,9 @@ export function ModelViewer({ modelUrl }: IModelViewerProps): JSX.Element {
           flatShading: false
         });
         
+        // Store original material for toggling
+        originalMaterialRef.current = whiteMaterial;
+        
         model.traverse((child) => {
           if (child instanceof THREE.Mesh) {
             child.material = whiteMaterial;
@@ -256,8 +321,8 @@ export function ModelViewer({ modelUrl }: IModelViewerProps): JSX.Element {
         console.log('ModelViewer: Model added to scene');
         console.log('ModelViewer: Scene children after add:', scene.children.length);
         
-        // Create grid overlay for the wall (initially hidden)
-        createWallGrid(scene, size, model);
+        // Create grid material for the wall (for draw mode)
+        createWallGridMaterial(size);
         
         // Adjust camera to fit model
         const maxDim = Math.max(size.x, size.y, size.z);
@@ -324,46 +389,75 @@ export function ModelViewer({ modelUrl }: IModelViewerProps): JSX.Element {
     };
   }, [modelUrl]);
   
-  // Create grid overlay on the wall surface
-  const createWallGrid = (scene: THREE.Scene, modelSize: THREE.Vector3, model: THREE.Group) => {
-    // Create grid texture
-    const gridTexture = createGridTexture(modelSize.x * 1.1, modelSize.y * 1.1);
+  // Create grid material for the wall - will be swapped when draw mode is toggled
+  const createWallGridMaterial = (modelSize: THREE.Vector3) => {
+    // Store model size for later use
+    modelSizeRef.current = modelSize;
     
-    // Create a plane geometry that matches the wall size
-    const planeGeometry = new THREE.PlaneGeometry(modelSize.x * 1.1, modelSize.y * 1.1);
-    
-    // Create material with grid texture
-    const gridMaterial = new THREE.MeshBasicMaterial({
-      map: gridTexture,
-      transparent: true,
-      opacity: 0.8,
-      side: THREE.DoubleSide,
-      depthTest: true,
-      depthWrite: false,
-      blending: THREE.NormalBlending
+    console.log('Creating wall grid material with dimensions:', { 
+      width: modelSize.x, 
+      height: modelSize.y,
+      depth: modelSize.z
     });
     
-    // Create mesh
-    const gridMesh = new THREE.Mesh(planeGeometry, gridMaterial);
-    gridMesh.name = 'wallGrid';
-    gridMesh.visible = false; // Initially hidden
+    // Create tileable grid texture
+    const gridTexture = createTileableGridTexture();
     
-    // Position grid slightly in front of the wall (z offset)
-    gridMesh.position.copy(model.position);
-    gridMesh.position.z += 0.02; // Small offset to prevent z-fighting
+    // Create material with grid texture applied directly
+    const gridMaterial = new THREE.MeshStandardMaterial({
+      map: gridTexture,
+      roughness: 0.3,
+      metalness: 0.0,
+      side: THREE.DoubleSide,
+      flatShading: false
+    });
     
-    // Add to model so it moves with the wall
-    model.add(gridMesh);
-    gridMeshRef.current = gridMesh;
+    gridMaterialRef.current = gridMaterial;
+    
+    // Store original UVs and regenerate for world-space mapping
+    if (modelRef.current) {
+      modelRef.current.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.geometry) {
+          const geometry = child.geometry;
+          // Store original UVs
+          if (geometry.attributes.uv) {
+            originalUVsRef.current.set(geometry, geometry.attributes.uv.clone());
+          }
+        }
+      });
+    }
+    
+    console.log('Wall grid material created');
   };
   
-  // Toggle draw mode (show/hide grid)
+  // Toggle draw mode - swap wall material to show/hide grid
   const handleToggleDrawMode = () => {
     setDrawMode(prev => {
       const newMode = !prev;
-      if (gridMeshRef.current) {
-        gridMeshRef.current.visible = newMode;
+      
+      if (modelRef.current && originalMaterialRef.current && gridMaterialRef.current) {
+        modelRef.current.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            if (newMode) {
+              // Regenerate UVs for world-space grid mapping
+              if (child.geometry) {
+                regenerateUVsForWorldSpace(child.geometry, 1);
+              }
+              // Switch to grid material
+              child.material = gridMaterialRef.current!;
+            } else {
+              // Restore original UVs
+              if (child.geometry && originalUVsRef.current.has(child.geometry)) {
+                const originalUV = originalUVsRef.current.get(child.geometry)!;
+                child.geometry.setAttribute('uv', originalUV);
+              }
+              // Switch back to original material
+              child.material = originalMaterialRef.current!;
+            }
+          }
+        });
       }
+      
       return newMode;
     });
   };

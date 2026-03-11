@@ -1059,3 +1059,19 @@ push all changes -m"catalog being loaded correctly"
 
 ## Prompt 396 - 2026-03-11 00:55:00
 so understand that mesh/grid is a marking on the wall only , so user who will apply panel will get a guidance where they are applyting it. It is integrated with wall model only. Since you know actualu heingt anf width og the wall, start from the top and show this mesh as to help the user who will then apply more things on top of the wall surface , it is like ED drawing square guidlines . something like below picture
+
+
+## Prompt 397 - 2026-03-11 01:00:00
+This is an example of integrated mesh what your output is. this is not right [Image showing Blender cube with grid subdivisions integrated into the mesh vs current output showing grid floating separately from wall]
+
+
+## Prompt 398 - 2026-03-11 01:05:00
+This is good but somehow only showing in some part of the wall - it should be showing on all surfaces of the wall, example not showing on top and back of the wall
+
+
+## Prompt 399 - 2026-03-11 01:10:00
+also it is not placed at half foot , in this example the total lenth was 14 foot however the grid only has 2 grid lines of 1 foot each
+
+
+## Prompt 400 - 2026-03-11 01:15:00
+Superb commit all changes -m"Grid on 3d model checkpoint"
